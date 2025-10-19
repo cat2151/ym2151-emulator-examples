@@ -9,6 +9,9 @@ set -e
 echo "Building Nuked-OPM shared library..."
 echo
 
+# Get the script directory before changing directories
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 # Create temporary directory
 TEMP_DIR=$(mktemp -d)
 echo "Using temporary directory: $TEMP_DIR"
@@ -20,8 +23,6 @@ git clone https://github.com/nukeykt/Nuked-OPM.git
 cd Nuked-OPM
 
 # Determine the platform and build accordingly
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
     echo "Building for Linux..."
     gcc -shared -fPIC -O2 -o libnukedopm.so opm.c
