@@ -22,7 +22,7 @@ Issue #16の要件に基づき、TypeScript/Node.js版のYM2151エミュレー�
 ```typescript
 let allBuffersAreZero = true;
 
-// バッファ生成時にチェック
+// バッファ生成時にチェック（最適化済み: 一度でも非ゼロが見つかったら以降スキップ）
 if (allBuffersAreZero) {
   for (let i = 0; i < buffer.length; i++) {
     if (buffer[i] !== 0) {
@@ -38,6 +38,10 @@ if (allBuffersAreZero) {
   process.exit(1);
 }
 ```
+
+**最適化**:
+- 一度でも非ゼロ値が見つかった後は、チェックをスキップ
+- 不必要なループ処理を避けることでパフォーマンスを向上
 
 ---
 

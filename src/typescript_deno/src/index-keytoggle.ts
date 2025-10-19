@@ -187,7 +187,8 @@ async function main() {
           // Get the audio buffer
           const buffer = chip.soundSlotGetSamplingRef(SOUND_SLOT_INDEX, SAMPLE_CHUNK_SIZE);
           
-          // Check if buffer contains non-zero values
+          // Check if buffer contains non-zero values (only if we haven't found any yet)
+          // This optimization skips the check once we've confirmed audio is being generated
           if (allBuffersAreZero) {
             for (let i = 0; i < buffer.length; i++) {
               if (buffer[i] !== 0) {
