@@ -1,0 +1,190 @@
+/**
+ * YM2151 (OPM) Emulator Example
+ * 
+ * This example demonstrates basic YM2151 sound generation using libymfm.wasm.
+ * It plays a simple 440Hz tone (A4) using FM synthesis.
+ */
+
+import { Libymfm, SoundChipType } from './libymfm.js';
+import { writeFileSync } from 'fs';
+
+// Configuration
+const SOUND_SLOT_INDEX = 0;
+const SAMPLING_RATE = 44100;
+const SAMPLE_CHUNK_SIZE = 4096;
+const SOUND_DRIVER_TICK_RATE = 60; // 60Hz tick rate
+const YM2151_CLOCK = 3579545; // Standard YM2151 clock rate
+
+// Duration in seconds
+const DURATION_SECONDS = 3;
+
+/**
+ * Initialize YM2151 chip with basic settings for a simple tone
+ */
+function initializeYM2151(chip: Libymfm, slotId: number): void {
+  // Reset all channels
+  for (let channel = 0; channel < 8; channel++) {
+    chip.soundSlotWrite(slotId, SoundChipType.YM2151, 0, 0x08, channel);
+  }
+
+  // Channel 0 configuration
+  const channel = 0;
+
+  // Pan: L+R (both speakers), FL: 7, CON: 7 (all carriers)
+  // Register 0x20-0x27: RL, FL, CON
+  chip.soundSlotWrite(slotId, SoundChipType.YM2151, 0, 0x20 + channel, 0xC7);
+
+  // KC (Key Code) for ~440Hz: 0x4A
+  // Register 0x28-0x2F: KC (Key Code)
+  chip.soundSlotWrite(slotId, SoundChipType.YM2151, 0, 0x28 + channel, 0x4A);
+
+  // KF (Key Fraction): 0x00
+  // Register 0x30-0x37: KF (Key Fraction)
+  chip.soundSlotWrite(slotId, SoundChipType.YM2151, 0, 0x30 + channel, 0x00);
+
+  // Configure operators (M1, M2, C1, C2)
+  const operators = [0, 8, 16, 24]; // Operator offsets
+  
+  for (const op of operators) {
+    const opOffset = op + channel;
+
+    // DT1: 0, MUL: 1 (1x frequency multiplier)
+    // Register 0x40-0x5F: DT1, MUL
+    chip.soundSlotWrite(slotId, SoundChipType.YM2151, 0, 0x40 + opOffset, 0x01);
+
+    // TL (Total Level): 0 for carriers, 127 for modulators (in CON=7, all are carriers)
+    // Register 0x60-0x7F: TL
+    chip.soundSlotWrite(slotId, SoundChipType.YM2151, 0, 0x60 + opOffset, 0x00);
+
+    // KS: 0, AR: 31 (fast attack)
+    // Register 0x80-0x9F: KS, AR
+    chip.soundSlotWrite(slotId, SoundChipType.YM2151, 0, 0x80 + opOffset, 0x1F);
+
+    // AMS-EN: 0, D1R: 0 (no decay 1)
+    // Register 0xA0-0xBF: AMS-EN, D1R
+    chip.soundSlotWrite(slotId, SoundChipType.YM2151, 0, 0xA0 + opOffset, 0x00);
+
+    // DT2: 0, D2R: 0 (no decay 2)
+    // Register 0xC0-0xDF: DT2, D2R
+    chip.soundSlotWrite(slotId, SoundChipType.YM2151, 0, 0xC0 + opOffset, 0x00);
+
+    // D1L: 0, RR: 15 (fast release)
+    // Register 0xE0-0xFF: D1L, RR
+    chip.soundSlotWrite(slotId, SoundChipType.YM2151, 0, 0xE0 + opOffset, 0x0F);
+  }
+
+  // Key On for all operators on channel 0
+  // Register 0x08: Key On/Off
+  // Bits 6-3: Operator select (M1=bit3, M2=bit4, C1=bit5, C2=bit6)
+  // Bits 2-0: Channel select
+  chip.soundSlotWrite(slotId, SoundChipType.YM2151, 0, 0x08, 0x78 | channel); // 0x78 = all ops on
+}
+
+/**
+ * Main function
+ */
+async function main() {
+  console.log('YM2151 Emulator Example');
+  console.log('=======================');
+  console.log(`Sample Rate: ${SAMPLING_RATE}Hz`);
+  console.log(`Chunk Size: ${SAMPLE_CHUNK_SIZE} samples`);
+  console.log(`Duration: ${DURATION_SECONDS} seconds`);
+  console.log('');
+
+  // Initialize libymfm
+  console.log('Initializing libymfm.wasm...');
+  const chip = new Libymfm();
+  await chip.init();
+  console.log('✓ WASM module loaded');
+
+  // Create sound slot
+  console.log('Creating sound slot...');
+  chip.soundSlotCreate(
+    SOUND_SLOT_INDEX,
+    SOUND_DRIVER_TICK_RATE,
+    SAMPLING_RATE,
+    SAMPLE_CHUNK_SIZE
+  );
+  console.log('✓ Sound slot created');
+
+  // Add YM2151 chip
+  console.log('Adding YM2151 sound chip...');
+  chip.soundSlotAddSoundDevice(
+    SOUND_SLOT_INDEX,
+    SoundChipType.YM2151,
+    1, // number of chips
+    YM2151_CLOCK
+  );
+  console.log('✓ YM2151 chip added');
+
+  // Initialize YM2151 for sound generation
+  console.log('Configuring YM2151 for 440Hz tone...');
+  initializeYM2151(chip, SOUND_SLOT_INDEX);
+  console.log('✓ YM2151 configured');
+
+  // Generate audio samples
+  console.log('');
+  console.log('Generating audio samples...');
+  const totalSamples = SAMPLING_RATE * DURATION_SECONDS;
+  const totalChunks = Math.ceil(totalSamples / SAMPLE_CHUNK_SIZE);
+  const audioBuffers: Int16Array[] = [];
+
+  let generatedChunks = 0;
+  while (generatedChunks < totalChunks) {
+    // Update sound driver (tick at 60Hz)
+    chip.soundSlotUpdate(SOUND_SLOT_INDEX, 1);
+
+    // Check if stream buffer is filled
+    if (chip.soundSlotIsStreamFilled(SOUND_SLOT_INDEX)) {
+      // Generate samples
+      chip.soundSlotStream(SOUND_SLOT_INDEX);
+      
+      // Get the audio buffer
+      const buffer = chip.soundSlotGetSamplingRef(SOUND_SLOT_INDEX, SAMPLE_CHUNK_SIZE);
+      
+      // Copy buffer (since it will be reused by WASM)
+      const bufferCopy = new Int16Array(buffer.length);
+      bufferCopy.set(buffer);
+      audioBuffers.push(bufferCopy);
+
+      generatedChunks++;
+
+      // Progress indicator
+      const progress = Math.floor((generatedChunks / totalChunks) * 100);
+      process.stdout.write(`\rProgress: ${progress}%`);
+    }
+  }
+  console.log('\n✓ Audio generation complete');
+
+  // Combine all audio buffers
+  const totalLength = audioBuffers.reduce((sum, buf) => sum + buf.length, 0);
+  const combinedBuffer = new Int16Array(totalLength);
+  let offset = 0;
+  for (const buf of audioBuffers) {
+    combinedBuffer.set(buf, offset);
+    offset += buf.length;
+  }
+
+  // Save to file as raw PCM (signed 16-bit little-endian, stereo)
+  const outputFile = 'output.pcm';
+  console.log('');
+  console.log(`Saving audio to ${outputFile}...`);
+  writeFileSync(outputFile, Buffer.from(combinedBuffer.buffer));
+  console.log('✓ Audio saved');
+
+  // Cleanup
+  chip.soundSlotDrop(SOUND_SLOT_INDEX);
+
+  console.log('');
+  console.log('Done!');
+  console.log('');
+  console.log('To play the audio file:');
+  console.log(`  ffplay -f s16le -ar ${SAMPLING_RATE} -ac 2 ${outputFile}`);
+  console.log('or');
+  console.log(`  aplay -f S16_LE -r ${SAMPLING_RATE} -c 2 ${outputFile}`);
+}
+
+main().catch(error => {
+  console.error('Error:', error);
+  process.exit(1);
+});

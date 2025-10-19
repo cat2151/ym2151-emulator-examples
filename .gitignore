@@ -234,3 +234,4 @@ deno.lock
 *.mp3
 *.ogg
 *.flac
+*.pcm
