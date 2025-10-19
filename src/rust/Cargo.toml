@@ -1,0 +1,11 @@
+[package]
+name = "ym2151-example"
+version = "0.1.0"
+edition = "2021"
+build = "build.rs"
+
+[dependencies]
+cpal = "0.15"
+
+[build-dependencies]
+cc = "1.0"
