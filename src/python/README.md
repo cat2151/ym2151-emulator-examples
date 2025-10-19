@@ -9,7 +9,7 @@ Pythonを使用したYM2151エミュレータの実装例です。Nuked-OPM（�
 - `nuked_opm.py` - Nuked-OPMライブラリのPythonラッパー
 - `main.py` - YM2151音声生成のメインプログラム
 - `simple_demo.py` - オーディオシステムの動作確認用デモ
-- `libnukedopm.so` - Nuked-OPMの共有ライブラリ (Linux x86_64)
+- `libnukedopm.dll` - Nuked-OPMの共有ライブラリ (Windows用、要ビルド)
 - `requirements.txt` - Python依存パッケージ
 
 ### 使用ライブラリ
@@ -20,51 +20,13 @@ Pythonを使用したYM2151エミュレータの実装例です。Nuked-OPM（�
 ## セットアップ
 
 ### 必要な環境
+- Windows 10/11
 - Python 3.8以上
-- PortAudio (sounddeviceの依存ライブラリ)
-
-### Linuxでの環境構築
-
-```bash
-# PortAudioのインストール（Ubuntu/Debian）
-sudo apt-get install libportaudio2 portaudio19-dev
-
-# PortAudioのインストール（Fedora/RHEL）
-sudo dnf install portaudio portaudio-devel
-
-# Python仮想環境の作成（推奨）
-python3 -m venv venv
-
-# 仮想環境の有効化
-source venv/bin/activate
-
-# 依存関係のインストール
-pip install -r requirements.txt
-```
-
-### macOSでの環境構築
-
-```bash
-# PortAudioのインストール
-brew install portaudio
-
-# Python仮想環境の作成（推奨）
-python3 -m venv venv
-
-# 仮想環境の有効化
-source venv/bin/activate
-
-# 依存関係のインストール
-pip install -r requirements.txt
-
-# 注意: libnukedopm.soはLinux用です
-# macOS用には以下のコマンドでビルドしてください:
-# cd /tmp && git clone https://github.com/nukeykt/Nuked-OPM.git
-# cd Nuked-OPM && gcc -shared -fPIC -O2 -o libnukedopm.dylib opm.c
-# cp libnukedopm.dylib /path/to/ym2151-emulator-examples/src/python/
-```
+- MSYS2 (MinGW-w64環境)
 
 ### Windowsでの環境構築
+
+#### 1. Python環境のセットアップ
 
 ```bash
 # Python仮想環境の作成
@@ -75,10 +37,45 @@ venv\Scripts\activate
 
 # 依存関係のインストール
 pip install -r requirements.txt
-
-# 注意: libnukedopm.soはLinux用です
-# Windows用にはMSYS2などでビルドしてlibnukedopm.dllを作成してください
 ```
+
+#### 2. Nuked-OPM DLLのビルド
+
+Windows用の `libnukedopm.dll` をビルドする必要があります。MSYS2のMINGW64環境を使用します。
+
+##### MSYS2での手順：
+
+1. **MSYS2 MINGW64環境を起動**
+   - スタートメニューから「MSYS2 MINGW64」を起動してください
+
+2. **必要なパッケージのインストール**（初回のみ）
+   ```bash
+   pacman -S mingw-w64-x86_64-gcc git
+   ```
+
+3. **Nuked-OPMのクローンとビルド**
+   ```bash
+   # 作業ディレクトリに移動（例：ホームディレクトリ）
+   cd ~
+   
+   # Nuked-OPMをクローン
+   git clone https://github.com/nukeykt/Nuked-OPM.git
+   cd Nuked-OPM
+   
+   # DLLをビルド
+   gcc -shared -fPIC -O2 -o libnukedopm.dll opm.c
+   ```
+
+4. **DLLのコピー**
+   ```bash
+   # DLLをPythonプロジェクトディレクトリにコピー
+   # （パスは環境に合わせて変更してください）
+   cp libnukedopm.dll /c/path/to/ym2151-emulator-examples/src/python/
+   ```
+   
+   または、Windowsエクスプローラーで以下のファイルをコピー：
+   - コピー元: `C:\msys64\home\<ユーザー名>\Nuked-OPM\libnukedopm.dll`
+   - コピー先: `ym2151-emulator-examples\src\python\libnukedopm.dll`
 
 ## 実行方法
 
@@ -105,20 +102,7 @@ Nuked-OPMは、YM2151 (OPM) チップのサイクル精度エミュレータで�
 - **ライセンス**: LGPL-2.1
 - **特徴**: ハードウェアと同等の精度でエミュレート
 
-### ビルド方法（参考）
-
-```bash
-# Nuked-OPMのクローン
-git clone https://github.com/nukeykt/Nuked-OPM.git
-cd Nuked-OPM
-
-# Linux/macOS向け共有ライブラリのビルド
-gcc -shared -fPIC -O2 -o libnukedopm.so opm.c  # Linux
-gcc -shared -fPIC -O2 -o libnukedopm.dylib opm.c  # macOS
-
-# ビルドしたライブラリをコピー
-cp libnukedopm.so /path/to/ym2151-emulator-examples/src/python/
-```
+ビルド手順については上記の「2. Nuked-OPM DLLのビルド」セクションを参照してください。
 
 ## トラブルシューティング
 
@@ -128,7 +112,7 @@ cp libnukedopm.so /path/to/ym2151-emulator-examples/src/python/
 OSError: PortAudio library not found
 ```
 
-→ PortAudioをインストールしてください（上記のセットアップを参照）
+→ `pip install sounddevice` でインストールされるPortAudioのバイナリが正しく動作していない可能性があります。Python環境を再作成してみてください。
 
 ### 共有ライブラリが見つからない
 
@@ -136,7 +120,13 @@ OSError: PortAudio library not found
 FileNotFoundError: Nuked-OPM library not found
 ```
 
-→ `libnukedopm.so`（またはOS対応のライブラリ）が`src/python/`ディレクトリにあることを確認してください
+→ `libnukedopm.dll`が`src/python/`ディレクトリにあることを確認してください。上記の「2. Nuked-OPM DLLのビルド」セクションに従ってビルドしてください。
+
+### DLLのビルドに失敗する
+
+- MSYS2 MINGW64環境で実行していることを確認してください（MSYS2 MSYSやMINGW32ではありません）
+- gccがインストールされているか確認: `gcc --version`
+- 必要に応じて再インストール: `pacman -S mingw-w64-x86_64-gcc`
 
 ### オーディオデバイスがない
 
