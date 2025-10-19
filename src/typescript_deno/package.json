@@ -7,7 +7,11 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
-    "dev": "tsc && node dist/index.js"
+    "dev": "tsc && node dist/index.js",
+    "start:keytoggle": "node dist/index-keytoggle.js",
+    "start:random": "node dist/index-random.js",
+    "start:ym2149": "node dist/index-ym2149.js",
+    "start:ym2413": "node dist/index-ym2413.js"
   },
   "keywords": [
     "YM2151",

@@ -4,10 +4,22 @@
 > Denoでの直接オーディオ再生は技術的に実現不可能なため、Node.jsを使用しています。
 > 詳細は [DENO_INVESTIGATION.md](./DENO_INVESTIGATION.md) を参照してください。
 
+> **重要**: この実装は**Windows専用**です。詳細なセットアップ手順は [README-WINDOWS.md](./README-WINDOWS.md) を参照してください。
+
 ## 概要
 TypeScriptとNode.jsを使用したYM2151エミュレータの最小実装例です。
 
 libymfm.wasmライブラリを使用して、YM2151 (OPM) チップをエミュレートし、440HzのA4音を直接スピーカーから再生するシンプルなサンプルプログラムを提供します。
+
+## 実装バージョン
+
+このディレクトリには以下の実装が含まれています：
+
+1. **index.ts** - 基本的なYM2151実装（3秒間440Hzトーンを再生）
+2. **index-keytoggle.ts** - 0.5秒ごとにキーON/OFFを切り替える版（3秒間）
+3. **index-random.ts** - CTRL+Cまで0.5秒ごとにランダムパラメータで再生
+4. **index-ym2149.ts** - YM2149（PSG）の実装例（比較用）
+5. **index-ym2413.ts** - YM2413（OPLL）の実装例（比較用）
 
 ## 使用ライブラリ
 - **libymfm.wasm**: WebAssembly版のymfmライブラリ（BSD-3-Clause）
@@ -15,48 +27,60 @@ libymfm.wasmライブラリを使用して、YM2151 (OPM) チップをエミュ�
   - YM2151を含む複数のYamaha FMチップをサポート
 - **speaker**: Node.js用のPCMオーディオ出力ライブラリ（MIT & LGPL-2.1）
   - リポジトリ: https://github.com/TooTallNate/node-speaker
-  - PortAudio、CoreAudio、ALSAなどのバックエンドをサポート
+  - WASAPIバックエンドをサポート（Windows）
 
 ## 必要な環境
-- Node.js 20.x以上
-- npm または yarn
-- システムのオーディオライブラリ（Linux: ALSA, macOS: CoreAudio, Windows: WASAPI）
-
-### Linux (Ubuntu/Debian)の場合
-```bash
-sudo apt-get install libasound2-dev
-```
-
-### macOS
-追加のインストールは不要です（CoreAudioが標準で利用可能）。
-
-### Windows
-追加のインストールは不要です（WASAPIが標準で利用可能）。
+- **Windows 10/11**
+- **Node.js 20.x以上**
+- **npm または yarn**
+- **MSYS2**（ネイティブモジュールのビルドに必要）
 
 ## セットアップ
 
-### 1. システムライブラリのインストール（Linux のみ）
-```bash
-sudo apt-get install libasound2-dev
-```
+**詳細なWindows専用セットアップ手順は [README-WINDOWS.md](./README-WINDOWS.md) を参照してください。**
 
-### 2. 依存関係のインストール
+### クイックスタート（MSYS2セットアップ済みの場合）
+
 ```bash
+# 依存関係のインストール
 npm install
-```
 
-### 3. ビルド
-```bash
+# ビルド
 npm run build
+
+# 実行（基本版）
+npm start
 ```
 
-### 4. 実行
+## 実行方法
+
+### 基本版（YM2151、3秒間440Hz再生）
 ```bash
 npm start
 ```
 
+### キートグル版（0.5秒ごとにON/OFF、3秒間）
+```bash
+npm run start:keytoggle
+```
+
+### ランダムパラメータ版（CTRL+Cまで無限ループ）
+```bash
+npm run start:random
+```
+
+### YM2149版（PSGチップ、比較用）
+```bash
+npm run start:ym2149
+```
+
+### YM2413版（OPLLチップ、比較用）
+```bash
+npm run start:ym2413
+```
+
 ## 動作
-プログラムを実行すると、3秒間の440Hz（A4音）がスピーカーから直接再生されます。
+プログラムを実行すると、指定された秒数の440Hz（A4音）がスピーカーから直接再生されます。
 
 音声は`speaker`ライブラリを使用してリアルタイムにストリーミング再生されます。
 
@@ -64,14 +88,19 @@ npm start
 ```
 typescript_deno/
 ├── src/
-│   ├── index.ts        # メインプログラム（YM2151の設定と音声生成）
-│   └── libymfm.ts      # libymfm.wasmのTypeScriptラッパー
+│   ├── index.ts              # メインプログラム（YM2151の設定と音声生成）
+│   ├── index-keytoggle.ts    # キートグル版
+│   ├── index-random.ts       # ランダムパラメータ版
+│   ├── index-ym2149.ts       # YM2149版（比較用）
+│   ├── index-ym2413.ts       # YM2413版（比較用）
+│   └── libymfm.ts            # libymfm.wasmのTypeScriptラッパー
 ├── wasm/
-│   └── libymfm.wasm    # WebAssemblyバイナリ
-├── dist/               # ビルド出力（npm run buildで生成）
+│   └── libymfm.wasm          # WebAssemblyバイナリ
+├── dist/                     # ビルド出力（npm run buildで生成）
 ├── package.json
 ├── tsconfig.json
-└── README.md
+├── README.md                 # このファイル
+└── README-WINDOWS.md         # Windows専用セットアップ詳細
 ```
 
 ## YM2151レジスタ設定
@@ -87,7 +116,7 @@ typescript_deno/
   - RR（リリースレート）: 15（高速）
   - TL（トータルレベル）: 0（最大音量）
 
-詳細な設定は `src/index.ts` の `initializeYM2151()` 関数を参照してください。
+詳細な設定は各ソースファイルの `initializeYM2151()` 関数を参照してください。
 
 ## 技術詳細
 
@@ -103,7 +132,7 @@ typescript_deno/
 `speaker`ライブラリを使用して、生成されたPCMオーディオデータを直接スピーカーに出力します：
 
 - **リアルタイムストリーミング**: バッファリングされたチャンクをリアルタイムで再生
-- **クロスプラットフォーム**: Linux (ALSA)、macOS (CoreAudio)、Windows (WASAPI) をサポート
+- **Windows対応**: WASAPI（Windows Audio Session API）を使用
 - **低レイテンシ**: チップエミュレーションと並行して再生
 
 ### サンプリングレート
@@ -111,8 +140,16 @@ typescript_deno/
 - **チャンクサイズ**: 4096サンプル
 - **ティックレート**: 60Hz（サウンドドライバの更新頻度）
 
+## バッファゼロチェック機能
+
+すべての実装に、演奏終了時のバッファゼロチェック機能が組み込まれています：
+
+- 生成されたすべてのバッファが0（無音）かどうかをチェック
+- すべて0の場合、エラーメッセージを表示してプロセスを終了（exit code 1）
+- これにより、チップが正しく音声を生成しているかを確認できます
+
 ## カスタマイズ
-`src/index.ts` を編集することで、以下のカスタマイズが可能です：
+各 `.ts` ファイルを編集することで、以下のカスタマイズが可能です：
 
 - 音の高さ（KCレジスタの値を変更）
 - 音色（アルゴリズム、オペレータパラメータの変更）
@@ -140,3 +177,4 @@ typescript_deno/
 - このサンプルプログラムはローカル環境での実行を想定しており、外部からの攻撃対象にはなりません
 
 本番環境でより安全なオーディオ出力が必要な場合は、代替ライブラリ（`naudiodon2`など）の使用を検討してください。
+
