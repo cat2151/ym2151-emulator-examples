@@ -11,6 +11,21 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 /**
+ * Interface for libymfm WASM exports
+ */
+interface LibymfmExports {
+  sound_slot_create: (slotId: number, tickRate: number, samplingRate: number, chunkSize: number) => void;
+  sound_slot_add_sound_device: (slotId: number, chipType: number, numberOfChips: number, clock: number) => void;
+  sound_slot_write: (slotId: number, chipType: number, chipIndex: number, port: number, data: number) => void;
+  sound_slot_update: (slotId: number, ticks: number) => void;
+  sound_slot_is_stream_filled: (slotId: number) => number;
+  sound_slot_stream: (slotId: number) => void;
+  sound_slot_sampling_s16le_ref: (slotId: number) => number;
+  sound_slot_drop: (slotId: number) => void;
+  memory: WebAssembly.Memory;
+}
+
+/**
  * Sound chip types supported by libymfm
  */
 export enum SoundChipType {
@@ -42,14 +57,16 @@ export enum SoundChipType {
 export class Libymfm {
   private instance: WebAssembly.Instance | null = null;
   private memory: WebAssembly.Memory | null = null;
-  private exports: any = null;
+  private exports: LibymfmExports | null = null;
 
   /**
    * Initialize the WASM module
    */
-  async init(): Promise<void> {
-    const wasmPath = join(__dirname, '..', 'wasm', 'libymfm.wasm');
-    const wasmBuffer = readFileSync(wasmPath);
+  async init(wasmPath?: string): Promise<void> {
+    // Allow custom WASM path or use default relative path
+    // The default path works when the dist folder structure matches src folder structure
+    const resolvedPath = wasmPath || join(__dirname, '..', 'wasm', 'libymfm.wasm');
+    const wasmBuffer = readFileSync(resolvedPath);
     
     const wasmModule = await WebAssembly.compile(wasmBuffer);
     
@@ -95,7 +112,7 @@ export class Libymfm {
     };
     
     this.instance = await WebAssembly.instantiate(wasmModule, importObject);
-    this.exports = this.instance.exports;
+    this.exports = this.instance.exports as unknown as LibymfmExports;
   }
 
   /**
@@ -107,6 +124,9 @@ export class Libymfm {
     outputSamplingRate: number,
     outputSampleChunkSize: number
   ): void {
+    if (!this.exports) {
+      throw new Error('WASM module not initialized');
+    }
     this.exports.sound_slot_create(
       slotId,
       externalTickRate,
@@ -124,6 +144,9 @@ export class Libymfm {
     numberOfChips: number,
     clock: number
   ): void {
+    if (!this.exports) {
+      throw new Error('WASM module not initialized');
+    }
     this.exports.sound_slot_add_sound_device(
       slotId,
       chipType,
@@ -142,6 +165,9 @@ export class Libymfm {
     port: number,
     data: number
   ): void {
+    if (!this.exports) {
+      throw new Error('WASM module not initialized');
+    }
     this.exports.sound_slot_write(
       slotId,
       chipType,
@@ -155,6 +181,9 @@ export class Libymfm {
    * Update the sound slot (tick the sound driver)
    */
   soundSlotUpdate(slotId: number, ticks: number): void {
+    if (!this.exports) {
+      throw new Error('WASM module not initialized');
+    }
     this.exports.sound_slot_update(slotId, ticks);
   }
 
@@ -162,6 +191,9 @@ export class Libymfm {
    * Check if the stream buffer is filled
    */
   soundSlotIsStreamFilled(slotId: number): number {
+    if (!this.exports) {
+      throw new Error('WASM module not initialized');
+    }
     return this.exports.sound_slot_is_stream_filled(slotId);
   }
 
@@ -169,6 +201,9 @@ export class Libymfm {
    * Stream the sound slot (generate audio samples)
    */
   soundSlotStream(slotId: number): void {
+    if (!this.exports) {
+      throw new Error('WASM module not initialized');
+    }
     this.exports.sound_slot_stream(slotId);
   }
 
@@ -177,8 +212,8 @@ export class Libymfm {
    * Note: The chunk size must be known from the soundSlotCreate call
    */
   soundSlotGetSamplingRef(slotId: number, chunkSize: number): Int16Array {
-    if (!this.memory) {
-      throw new Error('WASM memory not initialized');
+    if (!this.memory || !this.exports) {
+      throw new Error('WASM module not initialized');
     }
     
     const ptr = this.exports.sound_slot_sampling_s16le_ref(slotId);
@@ -195,6 +230,9 @@ export class Libymfm {
    * Drop a sound slot
    */
   soundSlotDrop(slotId: number): void {
+    if (!this.exports) {
+      throw new Error('WASM module not initialized');
+    }
     this.exports.sound_slot_drop(slotId);
   }
 

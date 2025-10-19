@@ -18,6 +18,9 @@ const YM2151_CLOCK = 3579545; // Standard YM2151 clock rate
 // Duration in seconds
 const DURATION_SECONDS = 3;
 
+// YM2151 register constants
+const YM2151_KEY_ON_ALL_OPERATORS = 0x78; // Bits 6-3 set (M1, M2, C1, C2)
+
 /**
  * Initialize YM2151 chip with basic settings for a simple tone
  */
@@ -77,7 +80,7 @@ function initializeYM2151(chip: Libymfm, slotId: number): void {
   // Register 0x08: Key On/Off
   // Bits 6-3: Operator select (M1=bit3, M2=bit4, C1=bit5, C2=bit6)
   // Bits 2-0: Channel select
-  chip.soundSlotWrite(slotId, SoundChipType.YM2151, 0, 0x08, 0x78 | channel); // 0x78 = all ops on
+  chip.soundSlotWrite(slotId, SoundChipType.YM2151, 0, 0x08, YM2151_KEY_ON_ALL_OPERATORS | channel);
 }
 
 /**
@@ -131,7 +134,9 @@ async function main() {
 
   let generatedChunks = 0;
   while (generatedChunks < totalChunks) {
-    // Update sound driver (tick at 60Hz)
+    // Update sound driver (tick)
+    // Note: The WASM module internally handles timing based on the configured tick rate (60Hz)
+    // and will fill the output buffer when enough samples have been accumulated
     chip.soundSlotUpdate(SOUND_SLOT_INDEX, 1);
 
     // Check if stream buffer is filled
