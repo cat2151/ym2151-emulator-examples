@@ -25,6 +25,9 @@ ym2151-emulator-examples/
 
 | 言語 | 推奨度 | ステータス | 実装アプローチ |
 |------|--------|-----------|--------------|
+| Rust | ⭐⭐⭐⭐⭐ | 🚧 実装予定 | libymfm.wasm |
+| TypeScript/Node.js | ⭐⭐⭐⭐⭐ | ✅ 実装完了 | libymfm.wasm |
+| Python | ⭐⭐⭐⭐ | 🚧 実装予定 | Nuked-OPM + ctypes |
 | Rust | ⭐⭐⭐⭐⭐ | ✅ **完了** | Nuked-OPM + FFI + cpal |
 | TypeScript/Deno | ⭐⭐⭐⭐⭐ | 🚧 実装予定 | libymfm.wasm |
 | Python | ⭐⭐⭐⭐ | 🚧 実装予定 | Nuked-OPM + ctypes |

@@ -1,0 +1,28 @@
+{
+  "name": "ym2151-typescript-example",
+  "version": "0.1.0",
+  "description": "TypeScript/Node.js implementation of YM2151 emulator using libymfm.wasm (Deno not supported - see DENO_INVESTIGATION.md)",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc && node dist/index.js"
+  },
+  "keywords": [
+    "YM2151",
+    "OPM",
+    "FM synthesis",
+    "audio",
+    "emulator"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "speaker": "^0.5.5"
+  }
+}
