@@ -75,7 +75,7 @@ src/python/
 ├── test_wrapper.py        # テストスイート
 ├── simple_demo.py         # オーディオシステムデモ
 ├── opm.h                  # Nuked-OPMヘッダー（参照用）
-└── libnukedopm.dll        # Nuked-OPM共有ライブラリ（Windows用、ビルド後）
+└── libnukedopm.dll        # Nuked-OPM共有ライブラリ（MSYS2でビルド、詳細はREADME参照）
 ```
 
 ## 使用例
