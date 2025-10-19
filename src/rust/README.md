@@ -9,7 +9,7 @@ Rustを使用した、実際のYM2151エミュレータライブラリ（Nuked-O
 - ✅ 本物のYM2151エミュレータ（Nuked-OPM）を使用
 - ✅ サイクル精度の高いエミュレーション
 - ✅ RustのFFIバインディングで安全にラップ
-- ✅ クロスプラットフォーム対応（Windows/macOS/Linux）
+- ✅ Windows環境で動作
 - ✅ 440Hz（A4音）のFM音源サウンドを生成
 
 ## 使用ライブラリ
@@ -19,44 +19,44 @@ Rustを使用した、実際のYM2151エミュレータライブラリ（Nuked-O
 
 ## 必要な環境
 - Rust 1.70以降
-- GCC (Cコンパイラ)
-- ALSA開発ライブラリ (Linux)
+- Visual Studio Build Tools または MinGW-w64（Cコンパイラ）
 
 ## セットアップと実行
 
-### 1. システム依存パッケージのインストール
+### 1. Visual Studio Build Toolsのインストール
 
-#### Linux (Ubuntu/Debian)
-```bash
-# ALSA開発ライブラリとCコンパイラのインストール
-sudo apt-get install libasound2-dev build-essential
-```
+以下のいずれかの方法でCコンパイラをインストールしてください：
 
-#### macOS
-```bash
-# Xcodeコマンドラインツールのインストール（Cコンパイラ）
-xcode-select --install
-```
+#### 方法A: Visual Studio Build Tools（推奨）
+1. [Visual Studio Build Tools](https://visualstudio.microsoft.com/ja/downloads/) からインストーラーをダウンロード
+2. インストーラーを実行し、「C++によるデスクトップ開発」を選択してインストール
 
-#### Windows
-```bash
-# Visual Studio Build Tools または MinGW-w64が必要
-# https://visualstudio.microsoft.com/ja/downloads/
-```
+#### 方法B: MinGW-w64
+1. [MinGW-w64](https://www.mingw-w64.org/) をインストール
+2. 環境変数PATHにMinGW-w64のbinディレクトリを追加
 
 ### 2. Rustのインストール（まだインストールされていない場合）
-```bash
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+1. [Rust公式サイト](https://www.rust-lang.org/ja/tools/install) から `rustup-init.exe` をダウンロード
+2. ダウンロードした `rustup-init.exe` を実行してインストール
+
+または、PowerShellで以下のコマンドを実行：
+```powershell
+# PowerShellで実行
+Invoke-WebRequest -Uri https://win.rustup.rs -OutFile rustup-init.exe
+.\rustup-init.exe
 ```
 
 ### 3. ビルド
-```bash
+
+コマンドプロンプトまたはPowerShellで以下を実行：
+```powershell
 # プロジェクトのビルド
 cargo build --release
 ```
 
 ### 4. 実行
-```bash
+```powershell
 # 実行
 cargo run --release
 ```
@@ -64,7 +64,7 @@ cargo run --release
 実行すると、スピーカーから2秒間の440Hz（A4音）のFM音源サウンドが再生されます。
 
 ### ワンステップで実行
-```bash
+```powershell
 # ビルドと実行を一度に行う
 cargo run --release
 ```
@@ -123,17 +123,16 @@ self.write(0xE0 + op, 0x0F); // RR (Release Rate)
 
 ## トラブルシューティング
 
-### Linux: "libasound2-dev not found"
-```bash
-sudo apt-get update
-sudo apt-get install libasound2-dev
-```
-
 ### ビルドエラー: "C compiler not found"
 Cコンパイラがインストールされているか確認してください。
-- Linux: `sudo apt-get install build-essential`
-- macOS: `xcode-select --install`
-- Windows: Visual Studio Build Toolsをインストール
+- Visual Studio Build Tools または MinGW-w64をインストールしてください
+- インストール後、新しいコマンドプロンプト/PowerShellを開いて再試行してください
+
+### ビルドエラー: "link.exe not found"
+Visual Studio Build Toolsが正しくインストールされていない可能性があります。
+1. Visual Studio Installerを起動
+2. 「C++によるデスクトップ開発」がインストールされているか確認
+3. インストールされていない場合は追加でインストール
 
 ### オーディオデバイスが見つからない
 実際のオーディオデバイスが接続されているか確認してください。
