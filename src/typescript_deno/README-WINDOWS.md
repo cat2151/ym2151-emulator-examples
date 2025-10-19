@@ -1,6 +1,8 @@
 # TypeScript/Node.js版 YM2151エミュレータ実装（Windows専用）
 
-> **注意**: この実装は**Windows専用**です。Node.jsの`speaker`ライブラリは、Windowsでネイティブコンパイルが必要なため、MSYS2を使用したビルド環境が必要です。
+> **注意**: この実装は**Windows専用**です。Node.jsの`speaker`ライブラリは、Windowsでネイティブコンパイルが必要なため、Visual Studio Build Toolsを使用したビルド環境が必要です。
+
+> **重要**: WSL2では実装できません。WSL2はLinux環境のため、Windowsのオーディオデバイスに直接アクセスできません。
 
 ## 概要
 TypeScriptとNode.jsを使用したYM2151エミュレータの実装例です。
@@ -24,69 +26,43 @@ libymfm.wasmライブラリを使用して、複数のYamahaチップ（YM2151, 
 - **speaker**: Node.js用のPCMオーディオ出力ライブラリ（MIT & LGPL-2.1）
   - リポジトリ: https://github.com/TooTallNate/node-speaker
   - WASAPIバックエンドを使用（Windows標準）
+  - **ネイティブモジュール**: C++で書かれており、Windows用にコンパイルが必要
 
 ## 必要な環境
 - **Windows 10/11**
 - **Node.js 20.x以上**
-- **MSYS2** （ネイティブモジュールのビルドに必要）
+- **Visual Studio Build Tools 2022** （ネイティブモジュールのビルドに必要）
 - **Python 3.x** （node-gypに必要）
 
-## MSYS2セットアップ（Windows）
+## セットアップ手順（Windows）
 
-### 1. MSYS2のインストール
+### 方法1: Visual Studio Build Tools（推奨）
 
-1. [MSYS2公式サイト](https://www.msys2.org/)から最新版をダウンロード
-2. インストーラを実行し、デフォルト設定でインストール（例: `C:\msys64`）
-3. インストール完了後、MSYS2を起動
+#### 1. Visual Studio Build Toolsのインストール
 
-### 2. MSYS2の更新とツールのインストール
+1. [Visual Studio Build Tools 2022](https://visualstudio.microsoft.com/ja/downloads/)をダウンロード
+   - 「すべてのダウンロード」→「Visual Studio 2022用のツール」→「Build Tools for Visual Studio 2022」
+2. インストーラを実行し、「C++によるデスクトップ開発」ワークロードを選択
+3. インストール完了後、Windowsを再起動
 
-MSYS2のターミナルで以下のコマンドを実行：
+#### 2. Pythonのインストール
 
-```bash
-# MSYS2パッケージデータベースを更新
-pacman -Syu
+1. [Python公式サイト](https://www.python.org/downloads/)から最新版をダウンロード
+2. インストール時に「Add Python to PATH」にチェックを入れる
 
-# 再起動を促された場合は、ターミナルを閉じて再度開く
-# その後、再度更新を実行
-pacman -Su
-
-# MinGW-w64ツールチェーンのインストール
-pacman -S --needed base-devel mingw-w64-x86_64-toolchain
-
-# Pythonのインストール（node-gypに必要）
-pacman -S mingw-w64-x86_64-python
-```
-
-### 3. 環境変数の設定
-
-**重要**: MinGW-w64のDLLに依存しないビルドを作成するため、以下の設定を行います。
-
-#### Windowsの環境変数設定：
-
-1. 「システムのプロパティ」→「環境変数」を開く
-2. ユーザー環境変数またはシステム環境変数に以下を追加：
-
-```
-Path に追加:
-  C:\msys64\mingw64\bin
-  C:\msys64\usr\bin
-
-新規作成:
-  PYTHON = C:\msys64\mingw64\bin\python.exe
-```
-
-### 4. node-gypの設定
+#### 3. node-gypの設定
 
 PowerShellまたはコマンドプロンプト（管理者権限）で実行：
 
 ```powershell
-# Visual Studio Build Toolsの代わりにMSYS2を使用
+# Visual Studio Build Tools 2022を使用
 npm config set msvs_version 2022
-npm config set python "C:\msys64\mingw64\bin\python.exe"
 
 # node-gypをグローバルインストール
 npm install -g node-gyp
+
+# 設定確認
+node-gyp --version
 ```
 
 ## プロジェクトのセットアップ
@@ -101,13 +77,45 @@ npm install
 ```
 
 **トラブルシューティング**:
-- `speaker`のビルドエラーが出る場合、MSYS2のパスが正しく設定されているか確認
-- Python関連のエラーが出る場合、Python環境変数が正しく設定されているか確認
+- `speaker`のビルドエラーが出る場合：
+  - Visual Studio Build Toolsが正しくインストールされているか確認
+  - `npm config get msvs_version`で設定を確認（2022と表示されるはず）
+  - PowerShellを再起動して環境変数を再読み込み
+- Python関連のエラーが出る場合：
+  - Pythonがインストールされているか確認: `python --version`
+  - PATHが正しく設定されているか確認
 
 ### 2. TypeScriptのビルド
 
 ```bash
 npm run build
+```
+
+## 実行方法
+
+### 基本版（YM2151、3秒間440Hz再生）
+```bash
+npm start
+```
+
+### キートグル版（0.5秒ごとにON/OFF、3秒間）
+```bash
+npm run start:keytoggle
+```
+
+### ランダムパラメータ版（CTRL+Cまで無限ループ）
+```bash
+npm run start:random
+```
+
+### YM2149版（PSGチップ、比較用）
+```bash
+npm run start:ym2149
+```
+
+### YM2413版（OPLLチップ、比較用）
+```bash
+npm run start:ym2413
 ```
 
 ## 実行方法
@@ -232,9 +240,14 @@ Error: `make` failed with exit code: 2
 ```
 
 **解決策**:
-1. MSYS2が正しくインストールされているか確認
-2. 環境変数Pathに `C:\msys64\mingw64\bin` と `C:\msys64\usr\bin` が追加されているか確認
-3. PowerShellを再起動して環境変数を再読み込み
+1. Visual Studio Build Tools 2022が正しくインストールされているか確認
+   - 「C++によるデスクトップ開発」ワークロードがインストールされているか確認
+2. npm config設定を確認:
+   ```powershell
+   npm config get msvs_version
+   # "2022" と表示されるはず
+   ```
+3. PowerShellを管理者権限で再起動
 4. `npm install`を再実行
 
 ### Pythonが見つからないエラー
@@ -243,8 +256,11 @@ gyp ERR! find Python
 ```
 
 **解決策**:
-1. PYTHON環境変数が正しく設定されているか確認: `C:\msys64\mingw64\bin\python.exe`
-2. npmの設定を確認: `npm config set python "C:\msys64\mingw64\bin\python.exe"`
+1. Pythonがインストールされているか確認:
+   ```powershell
+   python --version
+   ```
+2. PATHに追加されているか確認
 3. PowerShellを再起動
 4. `npm install`を再実行
 
@@ -269,6 +285,16 @@ ERROR: All generated audio buffers were zero!
 2. レジスタ設定を再確認
 3. ランダムパラメータ版で様々な設定を試す
 
+## WSL2について
+
+**WSL2では実装できません**。理由：
+
+- WSL2はLinux環境であり、Windowsのオーディオデバイスに直接アクセスできない
+- `speaker`ライブラリはネイティブのオーディオドライバ（WASAPI）を使用するため、Windows上で直接実行する必要がある
+- WSL2でビルドしたバイナリはLinux用であり、Windows上では動作しない
+
+WSL2を使用する場合は、別のアプローチ（Webサーバー + Web Audio API等）が必要になります。
+
 ## カスタマイズ
 
 各 `.ts` ファイルを編集することで、以下のカスタマイズが可能です：
@@ -292,7 +318,8 @@ ERROR: All generated audio buffers were zero!
 - [node-speaker リポジトリ](https://github.com/TooTallNate/node-speaker)
 
 ### ツール
-- [MSYS2公式サイト](https://www.msys2.org/)
+- [Visual Studio Build Tools](https://visualstudio.microsoft.com/ja/downloads/)
+- [Python公式サイト](https://www.python.org/downloads/)
 - [Node.js公式サイト](https://nodejs.org/)
 
 ## ライセンスとセキュリティ

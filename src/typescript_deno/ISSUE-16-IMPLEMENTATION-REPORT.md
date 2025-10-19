@@ -234,13 +234,17 @@ Path に追加:
 
 ### セットアップ（Windows）
 ```bash
-# MSYS2のセットアップ（詳細はREADME-WINDOWS.md参照）
-# 環境変数の設定後、以下を実行
+# Visual Studio Build Tools 2022のインストールが必要
+# 詳細はREADME-WINDOWS.md参照
 
 cd src/typescript_deno
 npm install
 npm run build
 ```
+
+**注意**: 
+- `speaker`ライブラリはC++のネイティブモジュールで、Visual Studio Build Toolsでコンパイルが必要
+- WSL2では使用できません（Windowsオーディオデバイスにアクセス不可）
 
 ### 実行
 ```bash
@@ -293,8 +297,8 @@ npm run start:ym2413
 ### speakerライブラリについて
 - node-gypでネイティブビルド
 - WindowsではWASAPI（Windows Audio Session API）を使用
-- MSYS2/MinGW-w64が必要
-- 静的リンクでDLL依存を最小化可能
+- Visual Studio Build Toolsまたはコンパイラが必要
+- **WSL2では使用不可**: WSL2はLinux環境のため、Windowsオーディオデバイスにアクセスできない
 
 ---
 
@@ -322,8 +326,9 @@ npm run start:ym2413
 
 ### Nuked-OPMのWASM化
 - ⚠️ 実装保留
-- 理由: WSL2でのカスタムビルドが必要
+- 理由: カスタムビルドが必要（EmscriptenまたはWSL2）
 - 現在の実装で精度に問題がなければ不要
+- **注意**: WSL2でビルドしたバイナリはWindows上で直接使用不可
 
 ---
 
@@ -337,11 +342,15 @@ Issue #16で要求されたすべての項目を実装完了:
 4. ✅ ランダムパラメータ版（パラメータ探索）
 5. ✅ Windows + Node.js + YM2151の成功事例調査
 6. ✅ 代替ライブラリの調査
-7. ✅ Windows専用ドキュメント整備
+7. ✅ Windows専用ドキュメント整備（Visual Studio Build Tools使用）
 
 **推奨**: 現在のlibymfm.wasm実装を継続使用
 
-**次のステップ**: Windows環境での実行テストと結果の確認
+**ビルド環境**: Visual Studio Build Tools 2022（MSYS2からの変更）
+
+**次のステップ**: Windows環境（Visual Studio Build Toolsセットアップ済み）での実行テストと結果の確認
+
+**重要**: WSL2では実装不可（Windowsオーディオデバイスアクセス不可）
 
 ---
 

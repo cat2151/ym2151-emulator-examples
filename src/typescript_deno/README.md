@@ -5,6 +5,7 @@
 > 詳細は [DENO_INVESTIGATION.md](./DENO_INVESTIGATION.md) を参照してください。
 
 > **重要**: この実装は**Windows専用**です。詳細なセットアップ手順は [README-WINDOWS.md](./README-WINDOWS.md) を参照してください。
+> **WSL2では実装できません**: WSL2はLinux環境のため、Windowsのオーディオデバイスに直接アクセスできません。
 
 ## 概要
 TypeScriptとNode.jsを使用したYM2151エミュレータの最小実装例です。
@@ -33,13 +34,17 @@ libymfm.wasmライブラリを使用して、YM2151 (OPM) チップをエミュ�
 - **Windows 10/11**
 - **Node.js 20.x以上**
 - **npm または yarn**
-- **MSYS2**（ネイティブモジュールのビルドに必要）
+- **Visual Studio Build Tools**（ネイティブモジュールのビルドに必要）
 
 ## セットアップ
 
 **詳細なWindows専用セットアップ手順は [README-WINDOWS.md](./README-WINDOWS.md) を参照してください。**
 
-### クイックスタート（MSYS2セットアップ済みの場合）
+**重要**: 
+- `speaker`ライブラリはネイティブモジュール（C++）のため、Visual Studio Build Toolsが必要です
+- WSL2では実装できません（Windowsオーディオデバイスにアクセス不可）
+
+### クイックスタート（Visual Studio Build Tools セットアップ済みの場合）
 
 ```bash
 # 依存関係のインストール

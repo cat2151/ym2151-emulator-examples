@@ -198,18 +198,17 @@ Issue #16の対処として、以下の項目を調査：
 - **理由**:
   - 最高精度のエミュレーション
   - 静的リンクでDLL依存なし
-  - WSL2でのビルドが必要（Emscripten）
+  - EmscriptenまたはWSL2でのビルドが必要
 
-**実装方法**:
+**WSL2について**:
+- ⚠️ **WSL2ではWindows上での実行不可**
+- WSL2でビルドしたバイナリはLinux用
+- Windowsのオーディオデバイスに直接アクセスできない
+- `speaker`ライブラリがWASAPI（Windows Audio Session API）を使用するため、Windows環境が必須
+
+**実装方法**（参考、実装は保留）:
 ```bash
-# WSL2でEmscriptenをセットアップ
-git clone https://github.com/emscripten-core/emsdk.git
-cd emsdk
-./emsdk install latest
-./emsdk activate latest
-source ./emsdk_env.sh
-
-# Nuked-OPMをWASMにビルド
+# EmscriptenでWASM化（推奨）
 emcc nuked_opm.c -o nuked_opm.wasm \
   -s EXPORTED_FUNCTIONS='["_OPM_Reset","_OPM_Write","_OPM_Generate"]' \
   -s MODULARIZE=1 \
