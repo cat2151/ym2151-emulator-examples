@@ -1,5 +1,9 @@
 # TypeScript/Node.js版 YM2151エミュレータ実装
 
+> **注意**: このディレクトリ名は`typescript_deno`ですが、実装は**Node.js**です。
+> Denoでの直接オーディオ再生は技術的に実現不可能なため、Node.jsを使用しています。
+> 詳細は [DENO_INVESTIGATION.md](./DENO_INVESTIGATION.md) を参照してください。
+
 ## 概要
 TypeScriptとNode.jsを使用したYM2151エミュレータの最小実装例です。
 

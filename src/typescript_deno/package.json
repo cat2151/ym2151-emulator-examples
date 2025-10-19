@@ -1,7 +1,7 @@
 {
-  "name": "ym2151-typescript-deno-example",
+  "name": "ym2151-typescript-example",
   "version": "0.1.0",
-  "description": "TypeScript/Node.js implementation of YM2151 emulator using libymfm.wasm",
+  "description": "TypeScript/Node.js implementation of YM2151 emulator using libymfm.wasm (Deno not supported - see DENO_INVESTIGATION.md)",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
