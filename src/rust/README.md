@@ -1,18 +1,21 @@
 # Rust版 YM2151エミュレータ実装
 
 ## 概要
-Rustを使用したYM2151風FM音源の最小実装例です。
+Rustを使用した、実際のYM2151エミュレータライブラリ（Nuked-OPM）を組み込んだ音声再生サンプルです。
 
-このプロジェクトは、YM2151（OPM）のFM合成方式を模倣したシンプルな音声再生デモを提供します。
+このプロジェクトは、サイクル精度の高いNuked-OPMエミュレータをRustのFFI（Foreign Function Interface）経由で使用し、本物のYM2151チップと同等の音声を生成します。
 
 ## 特徴
-- ✅ Pure Rust実装（外部C/C++ライブラリ不要）
+- ✅ 本物のYM2151エミュレータ（Nuked-OPM）を使用
+- ✅ サイクル精度の高いエミュレーション
+- ✅ RustのFFIバインディングで安全にラップ
 - ✅ クロスプラットフォーム対応（Windows/macOS/Linux）
-- ✅ FM合成による440Hz（A4音）の音声生成
-- ✅ エンベロープ（Attack/Sustain/Release）の実装
+- ✅ 440Hz（A4音）のFM音源サウンドを生成
 
 ## 使用ライブラリ
-- **cpal**: クロスプラットフォームオーディオ出力ライブラリ
+- **Nuked-OPM**: サイクル精度の高いYM2151エミュレータ（C言語）
+- **cpal**: クロスプラットフォームオーディオ出力ライブラリ（Rust）
+- **cc**: Cコードコンパイル用のビルドツール（Rust）
 
 ## セットアップ
 
@@ -20,18 +23,20 @@ Rustを使用したYM2151風FM音源の最小実装例です。
 
 #### Linux (Ubuntu/Debian)
 ```bash
-# ALSA開発ライブラリのインストール
-sudo apt-get install libasound2-dev
+# ALSA開発ライブラリとCコンパイラのインストール
+sudo apt-get install libasound2-dev build-essential
 ```
 
 #### macOS
 ```bash
-# 追加のライブラリは不要
+# Xcodeコマンドラインツールのインストール（Cコンパイラ）
+xcode-select --install
 ```
 
 #### Windows
 ```bash
-# 追加のライブラリは不要
+# Visual Studio Build Tools または MinGW-w64が必要
+# https://visualstudio.microsoft.com/ja/downloads/
 ```
 
 ### Rustのインストール
@@ -52,36 +57,54 @@ cargo run --release
 
 ## 実装の詳細
 
-### FM合成の仕組み
-この実装では、YM2151のFM（Frequency Modulation）合成方式を単純化して実装しています：
+### アーキテクチャ
+このプロジェクトは以下の構成で動作します：
 
-1. **キャリア周波数**: 440Hz（A4音）
-2. **モジュレータ周波数**: 880Hz（1オクターブ上）
-3. **変調指数**: 2.0
+1. **Nuked-OPM（C言語）**: YM2151チップの忠実なエミュレーション
+2. **FFIバインディング（Rust）**: Rustから安全にCライブラリを呼び出す
+3. **オーディオ出力（cpal）**: 生成されたサンプルを実際のオーディオデバイスに出力
 
-### 音声生成フロー
+### ビルドプロセス
+`build.rs`スクリプトが以下を自動的に実行します：
+- Nuked-OPMのCソースコード（`opm.c`）をコンパイル
+- 静的ライブラリとしてリンク
+
+### YM2151レジスタ設定
+プログラムは起動時に以下の設定を行います：
+- チャンネル0を使用
+- 440Hz（A4音）の周波数設定
+- シンプルなアルゴリズム（1オペレータ）
+- 高速アタック、中程度の音量
+
+## ファイル構成
+
 ```
-モジュレータ(880Hz) → FM変調 → キャリア(440Hz) → エンベロープ → 出力
+src/rust/
+├── Cargo.toml          # プロジェクト設定
+├── Cargo.lock          # 依存関係のロックファイル
+├── build.rs            # Nuked-OPMビルドスクリプト
+├── src/
+│   └── main.rs         # メイン実装（FFIバインディング含む）
+├── nuked-opm/          # Nuked-OPMライブラリ（vendored）
+│   ├── opm.c
+│   └── opm.h
+└── README.md           # このファイル
 ```
-
-### エンベロープ
-- **Attack**: 0.1秒かけてフェードイン
-- **Sustain**: 一定の音量を維持
-- **Release**: 0.5秒かけてフェードアウト
-- **合計時間**: 3秒
 
 ## カスタマイズ
 
-音を変更したい場合は、`src/main.rs`の以下のパラメータを調整してください：
+音を変更したい場合は、`src/main.rs`の`init_simple_tone()`関数内のレジスタ設定を変更してください：
 
 ```rust
-// 周波数の変更
-let carrier_freq = 440.0;      // キャリア周波数（Hz）
-let modulator_freq = 880.0;    // モジュレータ周波数（Hz）
-let modulation_index = 2.0;    // 変調指数
+// 周波数の変更（KCレジスタ）
+self.write(0x28, 0x4A); // 0x4A = 440Hz付近
 
-// 音量の変更
-output * envelope * 0.3  // 0.3 = 30%の音量
+// 音量の変更（TLレジスタ）
+self.write(0x60 + op, 0x18); // 0x00-0x7F (小さいほど大きい音)
+
+// エンベロープの変更
+self.write(0x80 + op, 0x1F); // AR (Attack Rate)
+self.write(0xE0 + op, 0x0F); // RR (Release Rate)
 ```
 
 ## トラブルシューティング
@@ -92,17 +115,24 @@ sudo apt-get update
 sudo apt-get install libasound2-dev
 ```
 
+### ビルドエラー: "C compiler not found"
+Cコンパイラがインストールされているか確認してください。
+- Linux: `sudo apt-get install build-essential`
+- macOS: `xcode-select --install`
+- Windows: Visual Studio Build Toolsをインストール
+
 ### オーディオデバイスが見つからない
 実際のオーディオデバイスが接続されているか確認してください。
 CI/CD環境など、オーディオデバイスがない環境では実行できません。
 
 ## ライセンス
-このプロジェクトは [MIT License](../../LICENSE) の下で公開されています。
+- このプロジェクト: [MIT License](../../LICENSE)
+- Nuked-OPM: LGPL-2.1（`nuked-opm/LICENSE`を参照）
 
 ## 参考リンク
 - [YM2151 Wikipedia](https://en.wikipedia.org/wiki/Yamaha_YM2151)
+- [Nuked-OPM GitHub](https://github.com/nukeykt/Nuked-OPM)
 - [cpal (Cross-Platform Audio Library)](https://github.com/RustAudio/cpal)
-- [FM synthesis](https://en.wikipedia.org/wiki/Frequency_modulation_synthesis)
 
 ## ステータス
-✅ **実装完了** - 基本的なFM音源の実装が完了しました。
+✅ **実装完了** - Nuked-OPMを使用した本格的なYM2151エミュレーションが完成しました。
