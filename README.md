@@ -27,7 +27,7 @@ ym2151-emulator-examples/
 |------|--------|-----------|--------------|
 | Rust | ⭐⭐⭐⭐⭐ | 🚧 実装予定 | libymfm.wasm |
 | TypeScript/Deno | ⭐⭐⭐⭐⭐ | 🚧 実装予定 | libymfm.wasm |
-| Python | ⭐⭐⭐⭐ | 🚧 実装予定 | Nuked-OPM + ctypes |
+| Python | ⭐⭐⭐⭐ | ✅ 実装完了 | Nuked-OPM + ctypes |
 | Go | ⭐⭐⭐⭐ | 🚧 実装予定 | Nuked-OPM/ymfm + CGO |
 
 ## クイックスタート
