@@ -26,7 +26,7 @@ Goを使用したYM2151エミュレータの最小実装例です。
 
 2. **実行時の依存関係**: 
    - **libportaudio-2.dll**: PortAudioのDLL（音声出力に必須）
-   - **MinGW関連のDLL**: libgcc_s_seh-1.dll、libstdc++-6.dll など（MinGWでビルドした場合に必要になる可能性あり）
+   - **MinGW関連のDLL**: libgcc_s_seh-1.dll、libstdc++-6.dll など（MinGWのGCCでビルドした場合に必要。動的リンクの場合は必須、静的リンクの場合は不要）
 
 ### ⚠️ 重要な制約：DLL依存関係
 
@@ -224,7 +224,7 @@ The code execution cannot proceed because libportaudio-2.dll was not found.
 **対処方法**:
 1. MSYS2 MINGW64シェル内で実行する（推奨）
 2. または、必要なDLLを実行ファイルと同じディレクトリにコピーする：
-   - `libportaudio-2.dll` (通常 `C:\msys64\mingw64\bin\` にあります)
+   - `libportaudio-2.dll` (通常MSYS2インストールディレクトリの `mingw64\bin\` にあります。デフォルトでは `C:\msys64\mingw64\bin\`)
    - その他のMinGW関連DLL（エラーメッセージに表示されたもの）
 
 ## ステータス
