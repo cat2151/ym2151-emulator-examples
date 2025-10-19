@@ -156,27 +156,20 @@ Issue #16の対処として、以下の項目を調査：
 - npmパッケージとして直接利用可能
 - ビルド不要（Pure JavaScript）
 
+**調査結果**: ❌ **npm上に公開されていない**
+- GitHubリポジトリは存在するが、npmパッケージとして公開されていない
+- 使用する場合はソースコードを直接クローンする必要がある
+
 **長所**:
 - ✅ ビルド不要（Pure TypeScript/JavaScript）
 - ✅ MITライセンス
-- ✅ Node.jsですぐに使える
 
 **短所**:
+- ❌ npmパッケージとして公開されていない
 - ❌ C/C++実装に比べて精度が劣る可能性
 - ❌ パフォーマンスがネイティブより劣る
 
-**評価**: ⭐⭐⭐⭐ **推奨度: 高**（ビルド不要で手軽、代替候補として有力）
-
-**実装例**:
-```typescript
-import { YM2151 } from '@digital-sound-antiques/ym2151';
-
-const chip = new YM2151();
-chip.reset();
-chip.write(0x08, 0x78); // Key on
-// ... レジスタ設定
-const samples = chip.render(samplingRate, chunkSize);
-```
+**評価**: ⭐⭐⭐ **推奨度: 中**（npm非公開のため導入に手間がかかる）
 
 ---
 
@@ -190,18 +183,11 @@ const samples = chip.render(samplingRate, chunkSize);
   - 複数チップ対応で比較テストが可能
 
 ### 3.2 代替案1: Pure JavaScript実装（ym2151.js）の追加
-- ✅ **推奨**: サブプロジェクトとして追加
+- ⚠️ **非推奨**: npmパッケージとして公開されていない
 - **理由**:
-  - ビルド不要で導入が容易
-  - ライセンスが緩い（MIT）
-  - Windows環境での問題切り分けに有用
-
-**実装方法**:
-```bash
-npm install @digital-sound-antiques/ym2151
-```
-
-新規ファイル `index-ym2151js.ts` を作成し、Pure JavaScript版として実装。
+  - npmに公開されていないため、導入が煩雑
+  - GitHubから直接クローンが必要
+  - 現在のlibymfm.wasmで十分に動作している
 
 ### 3.3 代替案2: Nuked-OPMのWASM化
 - ⚠️ **検討**: カスタムビルドが必要
@@ -265,8 +251,8 @@ emcc nuked_opm.c -o nuked_opm.wasm \
 1. ✅ **完了**: YM2149/YM2413版の実装（比較用）
 2. ✅ **完了**: キートグル版の実装（ADSR検証用）
 3. ✅ **完了**: ランダムパラメータ版の実装（設定検証用）
-4. ⚠️ **推奨**: Pure JavaScript版（@digital-sound-antiques/ym2151）の実装
-5. ⚠️ **任意**: Nuked-OPMのWASM化とNode.js統合
+4. ⚠️ **非推奨**: Pure JavaScript版（npm非公開のため導入が煩雑）
+5. ⚠️ **任意**: Nuked-OPMのWASM化とNode.js統合（高精度が必要な場合のみ）
 
 ### 5.3 バッファゼロ問題への対処
 - すべての実装にバッファゼロチェックを追加済み ✅
