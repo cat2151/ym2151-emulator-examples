@@ -3,53 +3,58 @@
 ## 概要
 TypeScriptとNode.jsを使用したYM2151エミュレータの最小実装例です。
 
-libymfm.wasmライブラリを使用して、YM2151 (OPM) チップをエミュレートし、440HzのA4音を生成するシンプルなサンプルプログラムを提供します。
+libymfm.wasmライブラリを使用して、YM2151 (OPM) チップをエミュレートし、440HzのA4音を直接スピーカーから再生するシンプルなサンプルプログラムを提供します。
 
 ## 使用ライブラリ
 - **libymfm.wasm**: WebAssembly版のymfmライブラリ（BSD-3-Clause）
   - リポジトリ: https://github.com/h1romas4/libymfm.wasm
   - YM2151を含む複数のYamaha FMチップをサポート
+- **speaker**: Node.js用のPCMオーディオ出力ライブラリ（MIT & LGPL-2.1）
+  - リポジトリ: https://github.com/TooTallNate/node-speaker
+  - PortAudio、CoreAudio、ALSAなどのバックエンドをサポート
 
 ## 必要な環境
 - Node.js 20.x以上
 - npm または yarn
+- システムのオーディオライブラリ（Linux: ALSA, macOS: CoreAudio, Windows: WASAPI）
+
+### Linux (Ubuntu/Debian)の場合
+```bash
+sudo apt-get install libasound2-dev
+```
+
+### macOS
+追加のインストールは不要です（CoreAudioが標準で利用可能）。
+
+### Windows
+追加のインストールは不要です（WASAPIが標準で利用可能）。
 
 ## セットアップ
 
-### 1. 依存関係のインストール
+### 1. システムライブラリのインストール（Linux のみ）
+```bash
+sudo apt-get install libasound2-dev
+```
+
+### 2. 依存関係のインストール
 ```bash
 npm install
 ```
 
-### 2. ビルド
+### 3. ビルド
 ```bash
 npm run build
 ```
 
-### 3. 実行
+### 4. 実行
 ```bash
 npm start
 ```
 
-## 出力
-プログラムを実行すると、`output.pcm` ファイルが生成されます。これは3秒間の440Hz（A4音）のオーディオデータです。
+## 動作
+プログラムを実行すると、3秒間の440Hz（A4音）がスピーカーから直接再生されます。
 
-### PCMファイルの再生方法
-
-#### ffplayを使用（推奨）
-```bash
-ffplay -f s16le -ar 44100 -ac 2 output.pcm
-```
-
-#### aplayを使用（Linuxの場合）
-```bash
-aplay -f S16_LE -r 44100 -c 2 output.pcm
-```
-
-#### WAVファイルに変換
-```bash
-ffmpeg -f s16le -ar 44100 -ac 2 -i output.pcm output.wav
-```
+音声は`speaker`ライブラリを使用してリアルタイムにストリーミング再生されます。
 
 ## プロジェクト構成
 ```
@@ -88,7 +93,14 @@ typescript_deno/
 1. **サウンドスロットの作成**: チップとオーディオ出力の設定
 2. **チップの追加**: YM2151チップを指定したクロック周波数で追加
 3. **レジスタへの書き込み**: YM2151のレジスタに値を書き込んで音色を設定
-4. **サンプル生成**: 60Hzのティックレートでチップを駆動し、オーディオサンプルを生成
+4. **リアルタイム再生**: 60Hzのティックレートでチップを駆動し、オーディオサンプルを生成・ストリーミング再生
+
+### オーディオ出力
+`speaker`ライブラリを使用して、生成されたPCMオーディオデータを直接スピーカーに出力します：
+
+- **リアルタイムストリーミング**: バッファリングされたチャンクをリアルタイムで再生
+- **クロスプラットフォーム**: Linux (ALSA)、macOS (CoreAudio)、Windows (WASAPI) をサポート
+- **低レイテンシ**: チップエミュレーションと並行して再生
 
 ### サンプリングレート
 - **出力サンプリングレート**: 44100Hz
@@ -108,7 +120,19 @@ typescript_deno/
 - [libymfm.wasm リポジトリ](https://github.com/h1romas4/libymfm.wasm)
 - [ymfm オリジナル](https://github.com/aaronsgiles/ymfm)
 
-## ライセンス
+## ライセンスとセキュリティ
 このプロジェクト自体はMITライセンスです。
 
-使用しているlibymfm.wasmはBSD-3-Clauseライセンスです。
+使用しているライブラリ：
+- **libymfm.wasm**: BSD-3-Clauseライセンス
+- **speaker**: MIT & LGPL-2.1ライセンス
+
+### セキュリティに関する注意事項
+`speaker`ライブラリには既知のDoS脆弱性（CVE-2024-21526）が存在します。この脆弱性は、`channels`プロパティに不正な型の値を渡した場合にプロセスがクラッシュする可能性があります。
+
+本実装では：
+- `channels`プロパティには常に数値`2`（ステレオ）を設定しており、脆弱性の影響を受けません
+- ユーザー入力を`channels`プロパティに渡すことはありません
+- このサンプルプログラムはローカル環境での実行を想定しており、外部からの攻撃対象にはなりません
+
+本番環境でより安全なオーディオ出力が必要な場合は、代替ライブラリ（`naudiodon2`など）の使用を検討してください。

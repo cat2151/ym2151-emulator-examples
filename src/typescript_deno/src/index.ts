@@ -2,11 +2,11 @@
  * YM2151 (OPM) Emulator Example
  * 
  * This example demonstrates basic YM2151 sound generation using libymfm.wasm.
- * It plays a simple 440Hz tone (A4) using FM synthesis.
+ * It plays a simple 440Hz tone (A4) using FM synthesis directly to the speakers.
  */
 
 import { Libymfm, SoundChipType } from './libymfm.js';
-import { writeFileSync } from 'fs';
+import Speaker from 'speaker';
 
 // Configuration
 const SOUND_SLOT_INDEX = 0;
@@ -125,68 +125,93 @@ async function main() {
   initializeYM2151(chip, SOUND_SLOT_INDEX);
   console.log('✓ YM2151 configured');
 
-  // Generate audio samples
+  // Create speaker for direct audio playback
   console.log('');
-  console.log('Generating audio samples...');
+  console.log('Initializing audio output...');
+  const speaker = new Speaker({
+    channels: 2,          // Stereo
+    bitDepth: 16,         // 16-bit samples
+    sampleRate: SAMPLING_RATE,
+  });
+  console.log('✓ Audio output initialized');
+
+  // Play audio directly
+  console.log('');
+  console.log(`Playing audio for ${DURATION_SECONDS} seconds...`);
+  console.log('Press Ctrl+C to stop.');
+  console.log('');
+
   const totalSamples = SAMPLING_RATE * DURATION_SECONDS;
   const totalChunks = Math.ceil(totalSamples / SAMPLE_CHUNK_SIZE);
-  const audioBuffers: Int16Array[] = [];
 
   let generatedChunks = 0;
-  while (generatedChunks < totalChunks) {
-    // Update sound driver (tick)
-    // Note: The WASM module internally handles timing based on the configured tick rate (60Hz)
-    // and will fill the output buffer when enough samples have been accumulated
-    chip.soundSlotUpdate(SOUND_SLOT_INDEX, 1);
+  const startTime = Date.now();
 
-    // Check if stream buffer is filled
-    if (chip.soundSlotIsStreamFilled(SOUND_SLOT_INDEX)) {
-      // Generate samples
-      chip.soundSlotStream(SOUND_SLOT_INDEX);
-      
-      // Get the audio buffer
-      const buffer = chip.soundSlotGetSamplingRef(SOUND_SLOT_INDEX, SAMPLE_CHUNK_SIZE);
-      
-      // Copy buffer (since it will be reused by WASM)
-      const bufferCopy = new Int16Array(buffer.length);
-      bufferCopy.set(buffer);
-      audioBuffers.push(bufferCopy);
+  // Stream audio chunks directly to the speaker
+  const playAudio = () => {
+    return new Promise<void>((resolve, reject) => {
+      speaker.on('error', reject);
+      speaker.on('close', resolve);
 
-      generatedChunks++;
+      const generateNextChunk = () => {
+        if (generatedChunks >= totalChunks) {
+          speaker.end();
+          return;
+        }
 
-      // Progress indicator
-      const progress = Math.floor((generatedChunks / totalChunks) * 100);
-      process.stdout.write(`\rProgress: ${progress}%`);
-    }
-  }
-  console.log('\n✓ Audio generation complete');
+        // Update sound driver (tick)
+        // Note: The WASM module internally handles timing based on the configured tick rate (60Hz)
+        // and will fill the output buffer when enough samples have been accumulated
+        chip.soundSlotUpdate(SOUND_SLOT_INDEX, 1);
 
-  // Combine all audio buffers
-  const totalLength = audioBuffers.reduce((sum, buf) => sum + buf.length, 0);
-  const combinedBuffer = new Int16Array(totalLength);
-  let offset = 0;
-  for (const buf of audioBuffers) {
-    combinedBuffer.set(buf, offset);
-    offset += buf.length;
-  }
+        // Check if stream buffer is filled
+        if (chip.soundSlotIsStreamFilled(SOUND_SLOT_INDEX)) {
+          // Generate samples
+          chip.soundSlotStream(SOUND_SLOT_INDEX);
+          
+          // Get the audio buffer
+          const buffer = chip.soundSlotGetSamplingRef(SOUND_SLOT_INDEX, SAMPLE_CHUNK_SIZE);
+          
+          // Convert Int16Array to Buffer for speaker
+          const audioBuffer = Buffer.from(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+          
+          // Write to speaker
+          const canContinue = speaker.write(audioBuffer);
+          
+          generatedChunks++;
 
-  // Save to file as raw PCM (signed 16-bit little-endian, stereo)
-  const outputFile = 'output.pcm';
-  console.log('');
-  console.log(`Saving audio to ${outputFile}...`);
-  writeFileSync(outputFile, Buffer.from(combinedBuffer.buffer));
-  console.log('✓ Audio saved');
+          // Progress indicator
+          const progress = Math.floor((generatedChunks / totalChunks) * 100);
+          const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+          process.stdout.write(`\rProgress: ${progress}% (${elapsed}s)`);
+
+          if (canContinue) {
+            // Continue immediately if buffer is not full
+            setImmediate(generateNextChunk);
+          } else {
+            // Wait for drain event if buffer is full
+            speaker.once('drain', generateNextChunk);
+          }
+        } else {
+          // Buffer not ready, try again
+          setImmediate(generateNextChunk);
+        }
+      };
+
+      generateNextChunk();
+    });
+  };
+
+  await playAudio();
+  
+  console.log('\n');
+  console.log('✓ Playback complete');
 
   // Cleanup
   chip.soundSlotDrop(SOUND_SLOT_INDEX);
 
   console.log('');
   console.log('Done!');
-  console.log('');
-  console.log('To play the audio file:');
-  console.log(`  ffplay -f s16le -ar ${SAMPLING_RATE} -ac 2 ${outputFile}`);
-  console.log('or');
-  console.log(`  aplay -f S16_LE -r ${SAMPLING_RATE} -c 2 ${outputFile}`);
 }
 
 main().catch(error => {
