@@ -41,7 +41,8 @@ ym2151-emulator-examples/
 
 ## 実装計画
 
-詳細な実装計画、ライブラリの比較、推奨度については [IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md) を参照してください。
+- **[IMPLEMENTATION_PLAN.md](IMPLEMENTATION_PLAN.md)** - 詳細な実装計画、推奨アプローチ、想定実装時間
+- **[LIBRARY_COMPARISON.md](LIBRARY_COMPARISON.md)** - ライブラリの詳細な比較表、ライセンス情報、言語別適合度
 
 ## 参考リンク
 
