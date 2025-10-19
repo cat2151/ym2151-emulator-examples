@@ -1,6 +1,31 @@
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{FromSample, SizedSample};
 
+// YM2151 clock configuration
+const CLOCKS_PER_SAMPLE: usize = 64; // Number of chip clocks per audio sample
+
+// Audio sample conversion constants
+const SAMPLE_SHIFT: i32 = 5; // Right shift for converting chip output to 16-bit
+const SAMPLE_MIN: i32 = -32768;
+const SAMPLE_MAX: i32 = 32767;
+
+// YM2151 register addresses
+const REG_KEY_ON: u8 = 0x08;
+const REG_RL_FB_CONNECT: u8 = 0x20;
+const REG_KC: u8 = 0x28; // Key Code
+const REG_KF: u8 = 0x30; // Key Fraction
+const REG_DT1_MUL: u8 = 0x40;
+const REG_TL: u8 = 0x60; // Total Level
+const REG_KS_AR: u8 = 0x80; // Key Scale / Attack Rate
+const REG_AMS_EN_D1R: u8 = 0xA0;
+const REG_DT2_D2R: u8 = 0xC0;
+const REG_D1L_RR: u8 = 0xE0; // Decay Level / Release Rate
+
+// YM2151 register values for 440Hz tone
+const KC_440HZ: u8 = 0x4A; // Key Code for approximately 440Hz
+const KF_440HZ: u8 = 0x00; // Key Fraction
+const RL_FB_CONNECT_SIMPLE: u8 = 0x07; // RL=3 (both channels), FB=0, CONNECT=7 (simple algorithm)
+
 /// FFI bindings to Nuked-OPM library
 #[repr(C)]
 struct OpmChip {
@@ -61,7 +86,7 @@ impl Ym2151 {
         unsafe {
             // Clock the chip multiple times to generate one sample
             // YM2151 runs at ~3.58 MHz, and we need to clock it many times per sample
-            for _ in 0..64 {
+            for _ in 0..CLOCKS_PER_SAMPLE {
                 OPM_Clock(
                     self.chip_ptr(),
                     output.as_mut_ptr(),
@@ -73,8 +98,8 @@ impl Ym2151 {
         }
 
         // Convert to 16-bit samples
-        let left = (output[0] >> 5).clamp(-32768, 32767) as i16;
-        let right = (output[1] >> 5).clamp(-32768, 32767) as i16;
+        let left = (output[0] >> SAMPLE_SHIFT).clamp(SAMPLE_MIN, SAMPLE_MAX) as i16;
+        let right = (output[1] >> SAMPLE_SHIFT).clamp(SAMPLE_MIN, SAMPLE_MAX) as i16;
 
         (left, right)
     }
@@ -83,42 +108,41 @@ impl Ym2151 {
     fn init_simple_tone(&mut self) {
         // Reset all channels
         for ch in 0..8 {
-            self.write(0x08, ch); // Key off
+            self.write(REG_KEY_ON, ch); // Key off
         }
 
         // Configure channel 0 for a simple tone
         // Set frequency (440 Hz = A4)
-        // KC (Key Code) and KF (Key Fraction) for 440Hz
-        self.write(0x28, 0x4A); // KC for channel 0 (approximately 440Hz)
-        self.write(0x30, 0x00); // KF for channel 0
+        self.write(REG_KC, KC_440HZ); // KC for channel 0 (approximately 440Hz)
+        self.write(REG_KF, KF_440HZ); // KF for channel 0
 
         // Configure operators for channel 0
         // We'll use a simple algorithm with just one operator
-        self.write(0x20, 0x07); // RL=3, FB=0, CONNECT=7 (simple algorithm)
+        self.write(REG_RL_FB_CONNECT, RL_FB_CONNECT_SIMPLE);
 
         // Configure operator M1 (first operator of channel 0)
         let op = 0; // Operator M1 of channel 0
 
         // DT1/MUL
-        self.write(0x40 + op, 0x01); // DT1=0, MUL=1
+        self.write(REG_DT1_MUL + op, 0x01); // DT1=0, MUL=1
 
         // TL (Total Level - volume)
-        self.write(0x60 + op, 0x18); // TL=24 (moderate volume)
+        self.write(REG_TL + op, 0x18); // TL=24 (moderate volume)
 
         // KS/AR (Key Scale / Attack Rate)
-        self.write(0x80 + op, 0x1F); // KS=0, AR=31 (fast attack)
+        self.write(REG_KS_AR + op, 0x1F); // KS=0, AR=31 (fast attack)
 
         // AMS-EN/D1R (AM Enable / Decay Rate 1)
-        self.write(0xA0 + op, 0x00); // AMS=0, D1R=0
+        self.write(REG_AMS_EN_D1R + op, 0x00); // AMS=0, D1R=0
 
         // DT2/D2R (Decay Rate 2)
-        self.write(0xC0 + op, 0x00); // DT2=0, D2R=0
+        self.write(REG_DT2_D2R + op, 0x00); // DT2=0, D2R=0
 
         // D1L/RR (Decay Level / Release Rate)
-        self.write(0xE0 + op, 0x0F); // D1L=0, RR=15
+        self.write(REG_D1L_RR + op, 0x0F); // D1L=0, RR=15
 
         // Key on for channel 0, all operators
-        self.write(0x08, 0x78); // Key on for all 4 operators of channel 0
+        self.write(REG_KEY_ON, 0x78); // Key on for all 4 operators of channel 0
     }
 }
 
