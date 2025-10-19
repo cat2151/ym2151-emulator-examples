@@ -8,6 +8,18 @@
 
 YM2151（OPM）は、1984年にヤマハが開発したFM音源チップで、アーケードゲーム機やホームコンピュータで広く使用されていました。
 
+## 新機能（Issue #16対応）
+
+TypeScript/Node.js版に以下の機能が追加されました：
+
+- ✅ **バッファゼロチェック**: 音声生成の検証機能
+- ✅ **複数チップ対応**: YM2149（PSG）、YM2413（OPLL）の実装例を追加
+- ✅ **キートグル版**: 0.5秒ごとにキーON/OFFを切り替える版
+- ✅ **ランダムパラメータ版**: CTRL+Cまで無限ループでランダムパラメータを試行
+- ✅ **Windows専用ドキュメント**: MSYS2を使用した詳細なセットアップ手順
+
+詳細は [src/typescript_deno/ISSUE-16-IMPLEMENTATION-REPORT.md](src/typescript_deno/ISSUE-16-IMPLEMENTATION-REPORT.md) を参照してください。
+
 ## プロジェクト構成
 
 ```
