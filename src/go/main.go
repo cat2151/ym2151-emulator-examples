@@ -2,15 +2,17 @@ package main
 
 /*
 #cgo CFLAGS: -I./nuked-opm-src
+#cgo pkg-config: portaudio-2.0
 #include "opm.h"
 #include "opm.c"
 #include <stdlib.h>
 */
 import "C"
 import (
-	"encoding/binary"
 	"fmt"
-	"os"
+	"time"
+
+	"github.com/gordonklaus/portaudio"
 )
 
 const (
@@ -18,33 +20,16 @@ const (
 	duration   = 2 // seconds
 )
 
-// writeWAVHeader writes a WAV file header
-func writeWAVHeader(f *os.File, dataSize int32) error {
-	// RIFF chunk
-	f.WriteString("RIFF")
-	binary.Write(f, binary.LittleEndian, int32(36+dataSize))
-	f.WriteString("WAVE")
-
-	// fmt chunk
-	f.WriteString("fmt ")
-	binary.Write(f, binary.LittleEndian, int32(16)) // chunk size
-	binary.Write(f, binary.LittleEndian, int16(1))  // PCM
-	binary.Write(f, binary.LittleEndian, int16(2))  // stereo
-	binary.Write(f, binary.LittleEndian, int32(sampleRate))
-	binary.Write(f, binary.LittleEndian, int32(sampleRate*2*2)) // byte rate
-	binary.Write(f, binary.LittleEndian, int16(4))              // block align
-	binary.Write(f, binary.LittleEndian, int16(16))             // bits per sample
-
-	// data chunk
-	f.WriteString("data")
-	binary.Write(f, binary.LittleEndian, dataSize)
-
-	return nil
-}
-
 func main() {
 	fmt.Println("YM2151 (OPM) Emulator Example - Go + Nuked-OPM")
 	fmt.Println("===============================================")
+
+	// Initialize PortAudio
+	if err := portaudio.Initialize(); err != nil {
+		fmt.Printf("Error initializing PortAudio: %v\n", err)
+		return
+	}
+	defer portaudio.Terminate()
 
 	// Initialize OPM chip
 	var chip C.opm_t
@@ -95,67 +80,60 @@ func main() {
 	C.OPM_Write(&chip, 0, 0x08) // Key On/Off
 	C.OPM_Write(&chip, 1, 0x78) // Channel 0, all slots on
 
-	fmt.Println("Key ON - generating audio...")
+	fmt.Println("Key ON - playing audio...")
 
-	// Generate audio samples
-	numSamples := sampleRate * duration
-	samples := make([]int16, numSamples*2) // stereo
+	// Create audio stream callback
+	// The callback generates audio samples in real-time
+	stream, err := portaudio.OpenDefaultStream(
+		0,          // no input channels
+		2,          // stereo output
+		sampleRate, // sample rate
+		512,        // frames per buffer
+		func(out [][]float32) {
+			// Generate samples for this buffer
+			for i := range out[0] {
+				var output C.int
+				var sh1, sh2, so C.uchar
 
-	for i := 0; i < numSamples; i++ {
-		var output C.int
-		var sh1, sh2, so C.uchar
+				// Clock the chip multiple times per sample
+				// YM2151 runs at 3.58 MHz, we need to clock it appropriately
+				// For 48kHz output: 3580000 / 48000 ≈ 74.58 clocks per sample
+				for j := 0; j < 75; j++ {
+					C.OPM_Clock(&chip, &output, &sh1, &sh2, &so)
+				}
 
-		// Clock the chip multiple times per sample
-		// YM2151 runs at 3.58 MHz, we need to clock it appropriately
-		// For 48kHz output: 3580000 / 48000 ≈ 74.58 clocks per sample
-		for j := 0; j < 75; j++ {
-			C.OPM_Clock(&chip, &output, &sh1, &sh2, &so)
-		}
+				// Convert to float32 for PortAudio (-1.0 to 1.0 range)
+				sample := float32(output) / 32768.0
+				out[0][i] = sample // left channel
+				out[1][i] = sample // right channel
+			}
+		},
+	)
+	if err != nil {
+		fmt.Printf("Error opening audio stream: %v\n", err)
+		return
+	}
+	defer stream.Close()
 
-		// The output is mono from OPM_Clock, we'll use it for both channels
-		// Output range is typically -32768 to 32767
-		sample := int16(output)
-		samples[i*2] = sample     // left
-		samples[i*2+1] = sample   // right
-
-		// Progress indicator
-		if i%(sampleRate/4) == 0 {
-			progress := float64(i) / float64(numSamples) * 100
-			fmt.Printf("\rProgress: %.1f%%", progress)
-		}
+	// Start the audio stream
+	if err := stream.Start(); err != nil {
+		fmt.Printf("Error starting audio stream: %v\n", err)
+		return
 	}
 
-	fmt.Printf("\rProgress: 100.0%%\n")
+	// Play for the specified duration
+	fmt.Printf("Playing for %d seconds...\n", duration)
+	time.Sleep(time.Duration(duration) * time.Second)
+
+	// Stop the audio stream
+	if err := stream.Stop(); err != nil {
+		fmt.Printf("Error stopping audio stream: %v\n", err)
+		return
+	}
 
 	// Key OFF
 	C.OPM_Write(&chip, 0, 0x08)
 	C.OPM_Write(&chip, 1, 0x00)
 
-	fmt.Println("Key OFF")
-
-	// Write to WAV file
-	filename := "output.wav"
-	f, err := os.Create(filename)
-	if err != nil {
-		fmt.Printf("Error creating file: %v\n", err)
-		return
-	}
-	defer f.Close()
-
-	dataSize := int32(len(samples) * 2)
-	if err := writeWAVHeader(f, dataSize); err != nil {
-		fmt.Printf("Error writing WAV header: %v\n", err)
-		return
-	}
-
-	// Write samples
-	for _, sample := range samples {
-		if err := binary.Write(f, binary.LittleEndian, sample); err != nil {
-			fmt.Printf("Error writing sample: %v\n", err)
-			return
-		}
-	}
-
-	fmt.Printf("Audio saved to %s\n", filename)
 	fmt.Println("Done!")
 }
