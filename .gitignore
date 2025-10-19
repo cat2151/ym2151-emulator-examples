@@ -205,3 +205,32 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Rust
+target/
+Cargo.lock
+*.rs.bk
+*.pdb
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+go.work
+go.work.sum
+
+# TypeScript/Deno
+node_modules/
+dist/
+*.tsbuildinfo
+.deno/
+deno.lock
+
+# Audio files
+*.wav
+*.mp3
+*.ogg
+*.flac
