@@ -12,30 +12,12 @@ Goを使用したYM2151エミュレータの最小実装例です。
 
 ## 必要な環境（Windows）
 
-### 推奨環境：WSL2
 - Windows 10/11 with WSL2
 - Ubuntu 22.04 LTS (WSL2内)
 - Go 1.21以降
 - Git
 
-### 代替環境：MSYS2
-- Go 1.21以降
-- MSYS2 (MinGW-w64環境)
-- Git
-
-## ビルド方法の選択
-
-このプロジェクトでは、**WSL2を使用したクロスコンパイル**を推奨します。
-
-### 推奨：WSL2でのビルド
-- ✅ クリーンなLinux環境でビルド可能
-- ✅ 依存関係の管理が容易
-- ✅ 静的リンクが簡単
-- ✅ Windows環境を汚染しない
-
-### 代替：MSYS2でのビルド
-- ⚠️ Windows環境にMSYS2のインストールが必要
-- ⚠️ 複数のツールチェーンの設定が必要
+**注意**: MSYS2/MinGWは使用しません。理由は、MinGWランタイムDLLへの依存を避け、Windows環境のDLL汚染を防ぐためです。
 
 ## プロジェクトポリシー
 
@@ -55,8 +37,6 @@ Goを使用したYM2151エミュレータの最小実装例です。
 
 ## 実行時の依存関係
 
-### WSL2でビルドした場合（推奨）
-
 **✅ DLLに一切依存しない完全なスタンドアロン実行ファイル**
 
 - PortAudioが静的ライブラリとしてリンクされる
@@ -64,25 +44,7 @@ Goを使用したYM2151エミュレータの最小実装例です。
 - Windows標準のシステムDLL（kernel32.dll等）のみに依存
 - MinGW環境がインストールされていないWindows PCでも動作
 
-### MSYS2でビルドした場合（代替方法）
-
-**⚠️ 推奨ビルド方法（静的リンク）を使用した場合：**
-
-- `libportaudio-2.dll` のみ（音声出力に必須）
-- MinGWランタイム（libgcc、libstdc++）は静的リンクされる
-
-**❌ 非推奨：デフォルトのビルド方法を使用した場合：**
-
-以下のDLLに依存します：
-- `libportaudio-2.dll` - 音声出力に必須
-- `libgcc_s_seh-1.dll` - MinGWランタイム（GCC）
-- `libstdc++-6.dll` - MinGWランタイム（C++標準ライブラリ）
-
-**この状態はプロジェクトポリシーに違反します。** 必ず後述の「推奨ビルド方法」を使用してください。
-
-## セットアップと実行
-
-### 方法A：WSL2でビルド（推奨）
+## セットアップと実行（WSL2）
 
 #### 0. 初回のみ：サブモジュールの初期化
 ```bash
@@ -227,104 +189,6 @@ cd $HOME\Documents
 - MinGW環境がインストールされていないWindows PCでも動作
 - 配布が容易（.exeファイル1つだけで完結）
 
----
-
-### 方法B：MSYS2でビルド（代替方法）
-
-#### 0. 初回のみ：サブモジュールの初期化
-```bash
-# リポジトリのクローン後、サブモジュールを初期化
-git submodule update --init --recursive
-```
-
-#### 1. MSYS2のインストール
-
-1. [MSYS2公式サイト](https://www.msys2.org/)から最新版をダウンロード
-2. インストーラーを実行してデフォルト設定でインストール
-3. インストール完了後、「MSYS2 MINGW64」を起動
-
-#### 2. 必要なパッケージのインストール
-
-MSYS2 MINGW64シェル内で以下を実行：
-
-```bash
-# システムの更新
-pacman -Syu
-# シェルを再起動後、再度更新
-pacman -Su
-
-# MinGW-w64ツールチェーン（GCC等）のインストール
-pacman -S mingw-w64-x86_64-toolchain
-
-# PortAudioのインストール
-pacman -S mingw-w64-x86_64-portaudio
-
-# pkg-configのインストール（ビルド時にライブラリの場所を検出するために必要）
-pacman -S mingw-w64-x86_64-pkg-config
-```
-
-#### 3. Goのセットアップ
-
-Windows用のGoをインストールしていない場合：
-1. [Go公式サイト](https://golang.org/dl/)からWindows版をダウンロード
-2. インストーラーを実行
-3. MSYS2シェルで `go version` が動作することを確認
-
-#### 4. 環境変数の設定
-
-MSYS2 MINGW64シェル内で以下を設定（毎回シェル起動時に必要）：
-
-```bash
-# MinGWのツールとライブラリへのパスを設定
-export PATH=/mingw64/bin:$PATH
-export PKG_CONFIG_PATH=/mingw64/lib/pkgconfig
-```
-
-これらを毎回設定するのが面倒な場合は、`~/.bashrc`に追加してください。
-
-#### 5. ビルド
-
-プロジェクトディレクトリ（`src/go/`）で以下を実行：
-
-##### ✅ 推奨：MinGWランタイムを静的リンクしてビルド（プロジェクトポリシーに準拠）
-
-```bash
-# MinGWランタイムを静的リンクしてビルド
-CGO_ENABLED=1 go build -ldflags "-extldflags '-static-libgcc -static-libstdc++'" -o ym2151-example.exe main.go
-```
-
-このビルド方法では、MinGWランタイム（libgcc、libstdc++）が実行ファイルに埋め込まれます。
-生成された実行ファイルは、`libportaudio-2.dll` のみに依存し、MinGW環境がインストールされていないWindows PCでも動作します。
-
-##### ⚠️ 非推奨：デフォルトビルド（プロジェクトポリシーに違反）
-
-```bash
-# MinGWランタイムを動的リンクしてビルド（非推奨）
-CGO_ENABLED=1 go build -o ym2151-example.exe main.go
-```
-
-このビルド方法では、MinGWランタイムDLLに依存する実行ファイルが生成されます。
-**プロジェクトポリシーに違反するため、使用しないでください。**
-
-#### 6. 実行
-
-```bash
-# プログラムを実行
-./ym2151-example.exe
-```
-
-実行すると、スピーカーから2秒間の440Hz A音が再生されます。
-
-**注意**: 推奨ビルド方法で作成した実行ファイルは、`libportaudio-2.dll` が必要です。
-MSYS2環境外で実行する場合は、DLLを実行ファイルと同じディレクトリにコピーしてください（通常 `C:\msys64\mingw64\bin\libportaudio-2.dll`）。
-
-#### ワンステップで実行
-
-```bash
-# ビルドと実行を一度に行う（推奨ビルド設定を使用）
-CGO_ENABLED=1 go run -ldflags "-extldflags '-static-libgcc -static-libstdc++'" main.go
-```
-
 ## 出力
 - **リアルタイム音声出力**: PortAudioを使用してスピーカーから直接音を再生
 - **48kHz, ステレオ**: 高品質なオーディオストリーミング
@@ -378,82 +242,56 @@ src/go/
 
 ## トラブルシューティング
 
-### `gcc: command not found`
-MSYS2のMinGW-w64ツールチェーンがインストールされていません：
-```bash
-# MSYS2 MINGW64シェル内で実行
-pacman -S mingw-w64-x86_64-toolchain
-```
+### WSL2のインストールに失敗する
+WSL2のインストールには管理者権限が必要です。PowerShellを管理者権限で実行してください。
 
-また、PATHが正しく設定されているか確認してください：
+また、Windows 10の場合はバージョン2004以降が必要です。Windows Updateで最新版に更新してください。
+
+### `gcc: command not found` または `x86_64-w64-mingw32-gcc: command not found`
+MinGWクロスコンパイラがインストールされていません：
 ```bash
-export PATH=/mingw64/bin:$PATH
+# WSL2のUbuntuターミナルで実行
+sudo apt install -y gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64
 ```
 
 ### `portaudio.h: No such file or directory`
-PortAudioがインストールされていません：
-```bash
-# MSYS2 MINGW64シェル内で実行
-pacman -S mingw-w64-x86_64-portaudio
-pacman -S mingw-w64-x86_64-pkg-config
-```
-
-`PKG_CONFIG_PATH`も設定してください：
-```bash
-export PKG_CONFIG_PATH=/mingw64/lib/pkgconfig
-```
+PortAudioがビルドされていないか、インストール場所が正しくありません。
+「3. PortAudioのWindows用静的ライブラリをビルド」セクションの手順を再度実行してください。
 
 ### `CGO_ENABLED=1` が必要
 GoでCGOを使用するには、明示的に有効化する必要があります。
 必ず `CGO_ENABLED=1` を設定してビルドしてください。
 
 ### `Error opening audio stream: no default output device`
-オーディオデバイスが見つかりません。以下を確認してください：
+Windows側でオーディオデバイスが見つかりません。以下を確認してください：
 - オーディオデバイスが正しく接続されているか
-- システムのオーディオ設定が正しいか
+- Windowsのオーディオ設定が正しいか
 - 他のアプリケーションがオーディオデバイスを占有していないか
 
-### DLLが見つからないエラー
+### ビルドしたexeファイルが動作しない
+WSL2でビルドした実行ファイルは、Windows側で実行する必要があります。
+WSL2のターミナル内では実行できません。
 
-#### libportaudio-2.dll が見つからない場合
-MSYS2環境外で実行した場合、以下のエラーが発生することがあります：
-```
-The code execution cannot proceed because libportaudio-2.dll was not found.
-```
-
-**対処方法**:
-1. MSYS2 MINGW64シェル内で実行する（最も簡単）
-2. または、`libportaudio-2.dll` を実行ファイルと同じディレクトリにコピーする：
-   - DLLの場所: 通常MSYS2インストールディレクトリの `mingw64\bin\` にあります（デフォルトでは `C:\msys64\mingw64\bin\libportaudio-2.dll`）
-
-#### MinGWランタイムDLLが見つからない場合
-以下のようなエラーが発生した場合：
-```
-The code execution cannot proceed because libgcc_s_seh-1.dll was not found.
-The code execution cannot proceed because libstdc++-6.dll was not found.
-```
-
-**原因**: 推奨ビルド方法を使用せず、MinGWランタイムを動的リンクしてビルドしたため。
-
-**対処方法**: 
-1. **推奨**: 「5. ビルド」セクションの推奨ビルド方法（`-static-libgcc -static-libstdc++` オプション付き）で再ビルドする
-2. これにより、MinGWランタイムが実行ファイルに埋め込まれ、DLLが不要になります
+必ず `/mnt/c/Users/$USER/Documents/` などWindows側のディレクトリにコピーしてから、
+WindowsのエクスプローラーまたはPowerShellで実行してください。
 
 ### ビルド設定の確認方法
 
-実行ファイルがどのDLLに依存しているか確認するには、MSYS2シェルで以下を実行：
+実行ファイルがどのDLLに依存しているか確認するには、WSL2シェルで以下を実行：
 ```bash
-ldd ym2151-example.exe
+x86_64-w64-mingw32-objdump -p ym2151-example.exe | grep "DLL Name"
 ```
 
 **推奨ビルドが成功している場合の出力例**:
 ```
-libportaudio-2.dll => /mingw64/bin/libportaudio-2.dll
-ntdll.dll => /c/WINDOWS/SYSTEM32/ntdll.dll
-KERNEL32.DLL => /c/WINDOWS/System32/KERNEL32.DLL
+DLL Name: KERNEL32.dll
+DLL Name: msvcrt.dll
+DLL Name: ADVAPI32.dll
 ...
-（libgcc_s_seh-1.dll や libstdc++-6.dll が表示されない）
+（libportaudio-2.dll、libgcc_s_seh-1.dll、libstdc++-6.dll が表示されない）
 ```
+
+WSL2でビルドした実行ファイルは、PortAudioも静的リンクされるため、DLLに一切依存しません。
 
 ## ステータス
 ✅ **実装完了** - リアルタイムオーディオ再生が動作しています。
