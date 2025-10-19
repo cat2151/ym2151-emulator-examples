@@ -20,34 +20,42 @@ Goを使用したYM2151エミュレータの最小実装例です。
 ### MinGWが必要な理由
 このプロジェクトでは、以下の理由でMinGW（MSYS2環境内のMinGW-w64）が必要です：
 
-1. **ビルド時**: CGO（GoからCコードを呼び出す仕組み）を使用するため、Cコンパイラ（GCC）が必要
-   - Nuked-OPMのCコードをコンパイルするため
-   - PortAudioライブラリとリンクするため
+**ビルド時のみ**: CGO（GoからCコードを呼び出す仕組み）を使用するため、Cコンパイラ（GCC）が必要
+- Nuked-OPMのCコードをコンパイルするため
+- PortAudioライブラリとリンクするため
 
-2. **実行時の依存関係**: 
-   - **libportaudio-2.dll**: PortAudioのDLL（音声出力に必須）
-   - **MinGW関連のDLL**: libgcc_s_seh-1.dll、libstdc++-6.dll など（MinGWのGCCでビルドした場合に必要。動的リンクの場合は必須、静的リンクの場合は不要）
+### 実行時の依存関係
 
-### ⚠️ 重要な制約：DLL依存関係
+**✅ 推奨ビルド方法（MinGWランタイムの静的リンク）を使用した場合：**
 
-**現状の実装では、ビルドされた実行ファイル（.exe）は以下のDLLに依存します：**
+- `libportaudio-2.dll` のみ（音声出力に必須）
 
+MinGWランタイム（libgcc、libstdc++）は静的リンクされるため、MinGW環境がインストールされていないWindows PCでも実行可能です。
+
+**⚠️ 注意：デフォルトのビルド方法を使用した場合：**
+
+以下のDLLに依存します：
 - `libportaudio-2.dll` - 音声出力に必須
-- MinGWランタイムDLL（ビルド設定による）
+- `libgcc_s_seh-1.dll` - MinGWランタイム（GCC）
+- `libstdc++-6.dll` - MinGWランタイム（C++標準ライブラリ）
 
-これは、**MinGW環境外では実行ファイルが動作しない可能性がある**ことを意味します。
+**この状態はプロジェクトポリシーに違反します。** 必ず後述の「推奨ビルド方法」を使用してください。
 
-### DLL依存を回避する方法の検討
+### プロジェクトポリシー
 
-完全に独立した実行ファイルを作成するには、以下の対応が必要ですが、複雑で困難です：
+このプロジェクトでは、**MinGWランタイムDLLへの動的リンクを厳重に禁止**しています。
 
-1. **PortAudioの静的リンク**: PortAudioを静的ライブラリとしてビルドし、実行ファイルに埋め込む
-2. **MinGWランタイムの静的リンク**: `-static` フラグを使用してMinGWランタイムも静的リンク
-3. **Windows APIの直接使用**: PortAudioを使わず、WASAPIやDirectSoundを直接使用（大幅な実装変更が必要）
+理由：
+- ユーザーにMSYS2/MinGW環境のインストールを強制する
+- Windows環境全体がMinGW DLLで汚染される
+- ユーザーが知らずにMinGW依存のアプリを作成・配布し、他のユーザーに迷惑をかける連鎖的トラブルが発生する
 
-**結論**: 現状のアプローチ（CGO + PortAudio）では、WindowsでカジュアルにCLIから音を鳴らすという要件を、DLL依存なしで実現することは困難です。
+**許可される依存関係：**
+- ✅ PortAudio DLLへの動的リンク（音声出力に必要なため）
+- ✅ MinGWランタイムの静的リンク（DLLを必要としないため）
 
-実行ファイルを配布する場合は、必要なDLLも同梱するか、MSYS2環境内での実行を前提とする必要があります。
+**禁止される依存関係：**
+- ❌ MinGWランタイムDLLへの動的リンク
 
 ## セットアップと実行
 
@@ -106,10 +114,25 @@ export PKG_CONFIG_PATH=/mingw64/lib/pkgconfig
 
 プロジェクトディレクトリ（`src/go/`）で以下を実行：
 
+#### ✅ 推奨：MinGWランタイムを静的リンクしてビルド（プロジェクトポリシーに準拠）
+
 ```bash
-# CGOを有効化してビルド
+# MinGWランタイムを静的リンクしてビルド
+CGO_ENABLED=1 go build -ldflags "-extldflags '-static-libgcc -static-libstdc++'" -o ym2151-example.exe main.go
+```
+
+このビルド方法では、MinGWランタイム（libgcc、libstdc++）が実行ファイルに埋め込まれます。
+生成された実行ファイルは、`libportaudio-2.dll` のみに依存し、MinGW環境がインストールされていないWindows PCでも動作します。
+
+#### ⚠️ 非推奨：デフォルトビルド（プロジェクトポリシーに違反）
+
+```bash
+# MinGWランタイムを動的リンクしてビルド（非推奨）
 CGO_ENABLED=1 go build -o ym2151-example.exe main.go
 ```
+
+このビルド方法では、MinGWランタイムDLLに依存する実行ファイルが生成されます。
+**プロジェクトポリシーに違反するため、使用しないでください。**
 
 ### 6. 実行
 
@@ -120,11 +143,14 @@ CGO_ENABLED=1 go build -o ym2151-example.exe main.go
 
 実行すると、スピーカーから2秒間の440Hz A音が再生されます。
 
+**注意**: 推奨ビルド方法で作成した実行ファイルは、`libportaudio-2.dll` が必要です。
+MSYS2環境外で実行する場合は、DLLを実行ファイルと同じディレクトリにコピーしてください（通常 `C:\msys64\mingw64\bin\libportaudio-2.dll`）。
+
 ### ワンステップで実行
 
 ```bash
-# ビルドと実行を一度に行う
-CGO_ENABLED=1 go run main.go
+# ビルドと実行を一度に行う（推奨ビルド設定を使用）
+CGO_ENABLED=1 go run -ldflags "-extldflags '-static-libgcc -static-libstdc++'" main.go
 ```
 
 ## 出力
@@ -216,16 +242,46 @@ GoでCGOを使用するには、明示的に有効化する必要があります
 - 他のアプリケーションがオーディオデバイスを占有していないか
 
 ### DLLが見つからないエラー
-MSYS2環境外で実行した場合、DLLが見つからないエラーが発生することがあります：
+
+#### libportaudio-2.dll が見つからない場合
+MSYS2環境外で実行した場合、以下のエラーが発生することがあります：
 ```
 The code execution cannot proceed because libportaudio-2.dll was not found.
 ```
 
 **対処方法**:
-1. MSYS2 MINGW64シェル内で実行する（推奨）
-2. または、必要なDLLを実行ファイルと同じディレクトリにコピーする：
-   - `libportaudio-2.dll` (通常MSYS2インストールディレクトリの `mingw64\bin\` にあります。デフォルトでは `C:\msys64\mingw64\bin\`)
-   - その他のMinGW関連DLL（エラーメッセージに表示されたもの）
+1. MSYS2 MINGW64シェル内で実行する（最も簡単）
+2. または、`libportaudio-2.dll` を実行ファイルと同じディレクトリにコピーする：
+   - DLLの場所: 通常MSYS2インストールディレクトリの `mingw64\bin\` にあります（デフォルトでは `C:\msys64\mingw64\bin\libportaudio-2.dll`）
+
+#### MinGWランタイムDLLが見つからない場合
+以下のようなエラーが発生した場合：
+```
+The code execution cannot proceed because libgcc_s_seh-1.dll was not found.
+The code execution cannot proceed because libstdc++-6.dll was not found.
+```
+
+**原因**: 推奨ビルド方法を使用せず、MinGWランタイムを動的リンクしてビルドしたため。
+
+**対処方法**: 
+1. **推奨**: 「5. ビルド」セクションの推奨ビルド方法（`-static-libgcc -static-libstdc++` オプション付き）で再ビルドする
+2. これにより、MinGWランタイムが実行ファイルに埋め込まれ、DLLが不要になります
+
+### ビルド設定の確認方法
+
+実行ファイルがどのDLLに依存しているか確認するには、MSYS2シェルで以下を実行：
+```bash
+ldd ym2151-example.exe
+```
+
+**推奨ビルドが成功している場合の出力例**:
+```
+libportaudio-2.dll => /mingw64/bin/libportaudio-2.dll
+ntdll.dll => /c/WINDOWS/SYSTEM32/ntdll.dll
+KERNEL32.DLL => /c/WINDOWS/System32/KERNEL32.DLL
+...
+（libgcc_s_seh-1.dll や libstdc++-6.dll が表示されない）
+```
 
 ## ステータス
 ✅ **実装完了** - リアルタイムオーディオ再生が動作しています。
