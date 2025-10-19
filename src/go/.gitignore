@@ -1,0 +1,9 @@
+# Build artifacts
+ym2151-example
+*.exe
+
+# Generated audio files
+*.wav
+
+# Go build cache
+go.sum
