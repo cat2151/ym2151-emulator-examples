@@ -99,14 +99,23 @@ fn main() {
 
     // Build and run the audio stream
     match config.sample_format() {
-        cpal::SampleFormat::F32 => run::<f32>(&device, &config.into()).unwrap(),
-        cpal::SampleFormat::I16 => run::<i16>(&device, &config.into()).unwrap(),
-        cpal::SampleFormat::U16 => run::<u16>(&device, &config.into()).unwrap(),
-        sample_format => panic!("Unsupported sample format: {}", sample_format),
+        cpal::SampleFormat::F32 => run::<f32>(&device, &config.into())
+            .expect("Failed to build audio stream"),
+        cpal::SampleFormat::I16 => run::<i16>(&device, &config.into())
+            .expect("Failed to build audio stream"),
+        cpal::SampleFormat::U16 => run::<u16>(&device, &config.into())
+            .expect("Failed to build audio stream"),
+        sample_format => panic!(
+            "Unsupported sample format: {}. Supported formats are F32, I16, and U16",
+            sample_format
+        ),
     }
 }
 
-fn run<T>(device: &cpal::Device, config: &cpal::StreamConfig) -> Result<(), anyhow::Error>
+fn run<T>(
+    device: &cpal::Device,
+    config: &cpal::StreamConfig,
+) -> Result<(), Box<dyn std::error::Error>>
 where
     T: SizedSample + FromSample<f32>,
 {
@@ -155,9 +164,4 @@ where
 
     println!("Done!");
     Ok(())
-}
-
-// Simple error handling
-mod anyhow {
-    pub type Error = Box<dyn std::error::Error>;
 }
