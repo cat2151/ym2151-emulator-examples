@@ -9,64 +9,75 @@ Rustを使用した、実際のYM2151エミュレータライブラリ（Nuked-O
 - ✅ 本物のYM2151エミュレータ（Nuked-OPM）を使用
 - ✅ サイクル精度の高いエミュレーション
 - ✅ RustのFFIバインディングで安全にラップ
-- ✅ Windows環境で動作
+- ✅ Windows（WSL2）環境で動作
 - ✅ 440Hz（A4音）のFM音源サウンドを生成
+- ✅ Nuked-OPM（C言語）を静的リンクでビルド
 
 ## 使用ライブラリ
 - **Nuked-OPM**: サイクル精度の高いYM2151エミュレータ（C言語）
 - **cpal**: クロスプラットフォームオーディオ出力ライブラリ（Rust）
 - **cc**: Cコードコンパイル用のビルドツール（Rust）
+  - ビルド時に **Nuked-OPM（C言語ライブラリ）** をコンパイルして静的リンクします
 
 ## 必要な環境
+- Windows 10/11 with WSL2（Ubuntu推奨）
 - Rust 1.70以降
-- Visual Studio Build Tools または MinGW-w64（Cコンパイラ）
+- GCC（Cコンパイラ - Nuked-OPM（C言語）のコンパイルに必要）
 
 ## セットアップと実行
 
-### 1. Visual Studio Build Toolsのインストール
+### 1. WSL2（Ubuntu）のインストール
 
-以下のいずれかの方法でCコンパイラをインストールしてください：
-
-#### 方法A: Visual Studio Build Tools（推奨）
-1. [Visual Studio Build Tools](https://visualstudio.microsoft.com/ja/downloads/) からインストーラーをダウンロード
-2. インストーラーを実行し、「C++によるデスクトップ開発」を選択してインストール
-
-#### 方法B: MinGW-w64
-1. [MinGW-w64](https://www.mingw-w64.org/) をインストール
-2. 環境変数PATHにMinGW-w64のbinディレクトリを追加
-
-### 2. Rustのインストール（まだインストールされていない場合）
-
-1. [Rust公式サイト](https://www.rust-lang.org/ja/tools/install) から `rustup-init.exe` をダウンロード
-2. ダウンロードした `rustup-init.exe` を実行してインストール
-
-または、PowerShellで以下のコマンドを実行：
+PowerShellを管理者権限で開き、以下を実行：
 ```powershell
-# PowerShellで実行
-Invoke-WebRequest -Uri https://win.rustup.rs -OutFile rustup-init.exe
-.\rustup-init.exe
+# WSL2とUbuntuのインストール
+wsl --install
 ```
 
-### 3. ビルド
+インストール完了後、PCを再起動してください。
 
-コマンドプロンプトまたはPowerShellで以下を実行：
-```powershell
-# プロジェクトのビルド
-cargo build --release
+再起動後、スタートメニューから「Ubuntu」を起動し、初回セットアップ（ユーザー名とパスワードの設定）を完了してください。
+
+### 2. Ubuntu（WSL2）での環境構築
+
+Ubuntuターミナルで以下を実行：
+
+```bash
+# パッケージリストの更新
+sudo apt update
+
+# GCC（Cコンパイラ）とビルドツールのインストール
+# これにより Nuked-OPM（C言語ライブラリ）がビルドできます
+sudo apt install build-essential -y
+
+# Rustのインストール
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# 環境変数の再読み込み
+source $HOME/.cargo/env
 ```
 
-### 4. 実行
-```powershell
-# 実行
-cargo run --release
+### 3. プロジェクトディレクトリへの移動
+
+WSL2からWindowsのファイルシステムにアクセスします：
+```bash
+# Windowsのドライブは /mnt/ 以下にマウントされています
+# 例: C:\Users\YourName\Documents\ym2151-emulator-examples の場合
+cd /mnt/c/Users/YourName/Documents/ym2151-emulator-examples/src/rust
 ```
 
-実行すると、スピーカーから2秒間の440Hz（A4音）のFM音源サウンドが再生されます。
+### 4. ビルドと実行
 
-### ワンステップで実行
-```powershell
+```bash
 # ビルドと実行を一度に行う
 cargo run --release
+```
+
+実行すると、Windowsのスピーカーから2秒間の440Hz（A4音）のFM音源サウンドが再生されます。
+
+※ ビルドのみ行う場合：
+```bash
+cargo build --release
 ```
 
 ## 実装の詳細
@@ -123,20 +134,29 @@ self.write(0xE0 + op, 0x0F); // RR (Release Rate)
 
 ## トラブルシューティング
 
-### ビルドエラー: "C compiler not found"
-Cコンパイラがインストールされているか確認してください。
-- Visual Studio Build Tools または MinGW-w64をインストールしてください
-- インストール後、新しいコマンドプロンプト/PowerShellを開いて再試行してください
+### WSL2がインストールできない
+Windows 10（バージョン1903以降）または Windows 11 が必要です。
+```powershell
+# Windows バージョンの確認
+winver
+```
 
-### ビルドエラー: "link.exe not found"
-Visual Studio Build Toolsが正しくインストールされていない可能性があります。
-1. Visual Studio Installerを起動
-2. 「C++によるデスクトップ開発」がインストールされているか確認
-3. インストールされていない場合は追加でインストール
+### ビルドエラー: "C compiler not found" または "cc: not found"
+GCC（Cコンパイラ）がインストールされているか確認してください。
+```bash
+# WSL2 Ubuntu内で実行
+sudo apt update
+sudo apt install build-essential -y
+```
 
 ### オーディオデバイスが見つからない
-実際のオーディオデバイスが接続されているか確認してください。
-CI/CD環境など、オーディオデバイスがない環境では実行できません。
+WSL2からWindowsのオーディオデバイスに接続できない場合があります。
+- WSLg（WSL2のGUI対応）が有効になっているか確認してください
+- Windows 11では標準で有効です
+- Windows 10では最新のWSL2に更新してください：
+  ```powershell
+  wsl --update
+  ```
 
 ## ライセンス
 - このプロジェクト: [MIT License](../../LICENSE)
