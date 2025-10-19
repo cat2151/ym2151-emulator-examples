@@ -125,15 +125,16 @@ func main() {
 	fmt.Printf("Playing for %d seconds...\n", duration)
 	time.Sleep(time.Duration(duration) * time.Second)
 
+	// Key OFF
+	C.OPM_Write(&chip, 0, 0x08)
+	C.OPM_Write(&chip, 1, 0x00)
+	fmt.Println("Key OFF")
+
 	// Stop the audio stream
 	if err := stream.Stop(); err != nil {
 		fmt.Printf("Error stopping audio stream: %v\n", err)
 		return
 	}
-
-	// Key OFF
-	C.OPM_Write(&chip, 0, 0x08)
-	C.OPM_Write(&chip, 1, 0x00)
 
 	fmt.Println("Done!")
 }
