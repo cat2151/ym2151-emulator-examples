@@ -17,9 +17,14 @@ Rustを使用した、実際のYM2151エミュレータライブラリ（Nuked-O
 - **cpal**: クロスプラットフォームオーディオ出力ライブラリ（Rust）
 - **cc**: Cコードコンパイル用のビルドツール（Rust）
 
-## セットアップ
+## 必要な環境
+- Rust 1.70以降
+- GCC (Cコンパイラ)
+- ALSA開発ライブラリ (Linux)
 
-### 必要な環境
+## セットアップと実行
+
+### 1. システム依存パッケージのインストール
 
 #### Linux (Ubuntu/Debian)
 ```bash
@@ -39,19 +44,28 @@ xcode-select --install
 # https://visualstudio.microsoft.com/ja/downloads/
 ```
 
-### Rustのインストール
+### 2. Rustのインストール（まだインストールされていない場合）
 ```bash
-# Rustがまだインストールされていない場合
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-## ビルドと実行
-
+### 3. ビルド
 ```bash
 # プロジェクトのビルド
 cargo build --release
+```
 
+### 4. 実行
+```bash
 # 実行
+cargo run --release
+```
+
+実行すると、スピーカーから2秒間の440Hz（A4音）のFM音源サウンドが再生されます。
+
+### ワンステップで実行
+```bash
+# ビルドと実行を一度に行う
 cargo run --release
 ```
 
