@@ -1,8 +1,6 @@
 # TypeScript/Node.js版 YM2151エミュレータ実装（Windows専用）
 
-> **注意**: この実装は**Windows専用**です。Node.jsの`speaker`ライブラリは、Windowsでネイティブコンパイルが必要なため、Visual Studio Build Toolsを使用したビルド環境が必要です。
-
-> **重要**: WSL2では実装できません。WSL2はLinux環境のため、Windowsのオーディオデバイスに直接アクセスできません。
+> **注意**: この実装は**Windows専用**です。Node.jsの`speaker`ライブラリは、Windowsでネイティブコンパイルが必要なため、WSL2上のMinGWでクロスコンパイルします。
 
 ## 概要
 TypeScriptとNode.jsを使用したYM2151エミュレータの実装例です。
@@ -26,122 +24,135 @@ libymfm.wasmライブラリを使用して、複数のYamahaチップ（YM2151, 
 - **speaker**: Node.js用のPCMオーディオ出力ライブラリ（MIT & LGPL-2.1）
   - リポジトリ: https://github.com/TooTallNate/node-speaker
   - WASAPIバックエンドを使用（Windows標準）
-  - **ネイティブモジュール**: C++で書かれており、Windows用にコンパイルが必要
+  - **ネイティブモジュール**: C++で書かれており、MinGWでクロスコンパイルが必要
 
 ## 必要な環境
-- **Windows 10/11**
-- **Node.js 20.x以上**
-- **Visual Studio Build Tools 2022** （ネイティブモジュールのビルドに必要）
-- **Python 3.x** （node-gypに必要）
+- **Windows 10/11** （実行環境）
+- **WSL2 (Ubuntu 22.04以降推奨)** （ビルド環境）
+- **Node.js 20.x以上** （Windows側にインストール）
 
-## セットアップ手順（Windows）
+## セットアップ手順
 
-### 方法1: Visual Studio Build Tools（推奨）
+### 1. WSL2のセットアップ
 
-#### 1. Visual Studio Build Toolsのインストール
+#### 1-1. WSL2のインストール（未インストールの場合）
 
-1. [Visual Studio Build Tools 2022](https://visualstudio.microsoft.com/ja/downloads/)をダウンロード
-   - 「すべてのダウンロード」→「Visual Studio 2022用のツール」→「Build Tools for Visual Studio 2022」
-2. インストーラを実行し、「C++によるデスクトップ開発」ワークロードを選択
-3. インストール完了後、Windowsを再起動
-
-#### 2. Pythonのインストール
-
-1. [Python公式サイト](https://www.python.org/downloads/)から最新版をダウンロード
-2. インストール時に「Add Python to PATH」にチェックを入れる
-
-#### 3. node-gypの設定
-
-PowerShellまたはコマンドプロンプト（管理者権限）で実行：
+Windows PowerShell（管理者権限）で実行：
 
 ```powershell
-# Visual Studio Build Tools 2022を使用
-npm config set msvs_version 2022
+wsl --install
+```
 
-# node-gypをグローバルインストール
+インストール完了後、Windowsを再起動。
+
+#### 1-2. WSL2でMinGWと依存パッケージをインストール
+
+WSL2 (Ubuntu)のターミナルで実行：
+
+```bash
+# パッケージリストを更新
+sudo apt update
+
+# MinGW-w64クロスコンパイラとビルドツールをインストール
+sudo apt install -y mingw-w64 gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64
+sudo apt install -y build-essential python3 python3-pip
+sudo apt install -y nodejs npm
+
+# Node.jsのバージョンを確認（20.x以上推奨）
+node --version
+```
+
+#### 1-3. node-gypの設定（WSL2内）
+
+WSL2のターミナルで実行：
+
+```bash
+# node-gypをインストール
 npm install -g node-gyp
 
-# 設定確認
-node-gyp --version
+# MinGWクロスコンパイル設定を追加
+export CC=x86_64-w64-mingw32-gcc
+export CXX=x86_64-w64-mingw32-g++
+export LINK=x86_64-w64-mingw32-g++
+export AR=x86_64-w64-mingw32-ar
+```
+
+これらの環境変数を永続化する場合は `~/.bashrc` に追加：
+
+```bash
+echo 'export CC=x86_64-w64-mingw32-gcc' >> ~/.bashrc
+echo 'export CXX=x86_64-w64-mingw32-g++' >> ~/.bashrc
+echo 'export LINK=x86_64-w64-mingw32-g++' >> ~/.bashrc
+echo 'export AR=x86_64-w64-mingw32-ar' >> ~/.bashrc
+source ~/.bashrc
 ```
 
 ## プロジェクトのセットアップ
 
-### 1. 依存関係のインストール
+### 2. speakerライブラリのクロスコンパイル（WSL2内）
 
-通常のコマンドプロンプトまたはPowerShellで実行：
+WSL2のターミナルで、プロジェクトディレクトリに移動：
 
 ```bash
-cd src/typescript_deno
-npm install
+# WSL2からWindows側のプロジェクトディレクトリにアクセス
+cd /mnt/c/path/to/ym2151-emulator-examples/src/typescript_deno
+
+# 依存関係のインストール（speakerをMinGWでクロスコンパイル）
+npm install --build-from-source
+
+# speakerのビルド設定を確認
+npm run build
 ```
 
-**トラブルシューティング**:
-- `speaker`のビルドエラーが出る場合：
-  - Visual Studio Build Toolsが正しくインストールされているか確認
-  - `npm config get msvs_version`で設定を確認（2022と表示されるはず）
-  - PowerShellを再起動して環境変数を再読み込み
-- Python関連のエラーが出る場合：
-  - Pythonがインストールされているか確認: `python --version`
-  - PATHが正しく設定されているか確認
+**重要な注意点**:
+- `--build-from-source` オプションでソースからビルドすることを明示
+- MinGW環境変数（CC, CXX等）が正しく設定されていることを確認
+- ビルドされたネイティブモジュール（.node）はWindows用バイナリ
+- MinGWライブラリは静的リンクされるため、外部DLL依存なし
 
-### 2. TypeScriptのビルド
+### 3. TypeScriptのビルド（WSL2またはWindows）
+
+WSL2で実行：
 
 ```bash
 npm run build
 ```
 
-## 実行方法
+または、Windows側で実行：
+
+```powershell
+cd C:\path\to\ym2151-emulator-examples\src\typescript_deno
+npm run build
+```
+
+## 実行方法（Windows側）
+
+**重要**: 実行はWindows側のNode.jsで行います。WSL2ではWindowsのオーディオデバイスにアクセスできないため、ビルドのみWSL2で行い、実行はWindows上で行います。
+
+Windows PowerShellまたはコマンドプロンプトで：
 
 ### 基本版（YM2151、3秒間440Hz再生）
-```bash
+```powershell
 npm start
 ```
 
 ### キートグル版（0.5秒ごとにON/OFF、3秒間）
-```bash
+```powershell
 npm run start:keytoggle
 ```
 
 ### ランダムパラメータ版（CTRL+Cまで無限ループ）
-```bash
+```powershell
 npm run start:random
 ```
 
 ### YM2149版（PSGチップ、比較用）
-```bash
+```powershell
 npm run start:ym2149
 ```
 
 ### YM2413版（OPLLチップ、比較用）
-```bash
-npm run start:ym2413
-```
-
-## 実行方法
-
-### 基本版（YM2151、3秒間440Hz再生）
-```bash
-npm start
-```
-
-### キートグル版（0.5秒ごとにON/OFF、3秒間）
-```bash
-npm run start:keytoggle
-```
-
-### ランダムパラメータ版（CTRL+Cまで無限ループ）
-```bash
-npm run start:random
-```
-
-### YM2149版（PSGチップ、比較用）
-```bash
-npm run start:ym2149
-```
-
-### YM2413版（OPLLチップ、比較用）
-```bash
+```powershell
 npm run start:ym2413
 ```
 
@@ -234,37 +245,44 @@ typescript_deno/
 
 ## トラブルシューティング
 
-### speakerのビルドエラー
+### speakerのビルドエラー（WSL2内）
 ```
 Error: `make` failed with exit code: 2
 ```
 
 **解決策**:
-1. Visual Studio Build Tools 2022が正しくインストールされているか確認
-   - 「C++によるデスクトップ開発」ワークロードがインストールされているか確認
-2. npm config設定を確認:
-   ```powershell
-   npm config get msvs_version
-   # "2022" と表示されるはず
+1. MinGW環境変数が正しく設定されているか確認:
+   ```bash
+   echo $CC
+   # x86_64-w64-mingw32-gcc と表示されるはず
    ```
-3. PowerShellを管理者権限で再起動
-4. `npm install`を再実行
+2. MinGWパッケージが正しくインストールされているか確認:
+   ```bash
+   which x86_64-w64-mingw32-gcc
+   # /usr/bin/x86_64-w64-mingw32-gcc と表示されるはず
+   ```
+3. `~/.bashrc`を再読み込み:
+   ```bash
+   source ~/.bashrc
+   ```
+4. `npm install --build-from-source`を再実行
 
-### Pythonが見つからないエラー
+### Pythonが見つからないエラー（WSL2内）
 ```
 gyp ERR! find Python
 ```
 
 **解決策**:
-1. Pythonがインストールされているか確認:
-   ```powershell
-   python --version
+1. WSL2内のPythonがインストールされているか確認:
+   ```bash
+   python3 --version
    ```
-2. PATHに追加されているか確認
-3. PowerShellを再起動
-4. `npm install`を再実行
+2. python3が見つからない場合はインストール:
+   ```bash
+   sudo apt install python3
+   ```
 
-### 音が出ない
+### 音が出ない（Windows側）
 1. Windowsの音量設定を確認
 2. デフォルトの再生デバイスが正しく設定されているか確認
 3. 他のアプリケーションがオーディオデバイスを占有していないか確認
@@ -285,15 +303,15 @@ ERROR: All generated audio buffers were zero!
 2. レジスタ設定を再確認
 3. ランダムパラメータ版で様々な設定を試す
 
-## WSL2について
+## WSL2とMinGWについて
 
-**WSL2では実装できません**。理由：
+**ビルド環境としてWSL2を使用する理由**:
 
-- WSL2はLinux環境であり、Windowsのオーディオデバイスに直接アクセスできない
-- `speaker`ライブラリはネイティブのオーディオドライバ（WASAPI）を使用するため、Windows上で直接実行する必要がある
-- WSL2でビルドしたバイナリはLinux用であり、Windows上では動作しない
+- WSL2上のMinGWでWindows用バイナリをクロスコンパイル可能
+- MinGWライブラリは静的リンクされるため、外部DLL依存なし
+- ビルドされた.nodeファイルはWindows上で実行可能
 
-WSL2を使用する場合は、別のアプローチ（Webサーバー + Web Audio API等）が必要になります。
+**注意**: 実行はWindows側で行う必要があります（WSL2からはWindowsオーディオデバイスにアクセス不可）。
 
 ## カスタマイズ
 
@@ -318,8 +336,8 @@ WSL2を使用する場合は、別のアプローチ（Webサーバー + Web Aud
 - [node-speaker リポジトリ](https://github.com/TooTallNate/node-speaker)
 
 ### ツール
-- [Visual Studio Build Tools](https://visualstudio.microsoft.com/ja/downloads/)
-- [Python公式サイト](https://www.python.org/downloads/)
+- [WSL2公式ドキュメント](https://docs.microsoft.com/ja-jp/windows/wsl/)
+- [MinGW-w64](https://www.mingw-w64.org/)
 - [Node.js公式サイト](https://nodejs.org/)
 
 ## ライセンスとセキュリティ

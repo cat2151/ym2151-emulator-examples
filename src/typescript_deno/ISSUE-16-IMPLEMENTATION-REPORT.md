@@ -233,18 +233,27 @@ Path に追加:
 ## 使用方法
 
 ### セットアップ（Windows）
+
+WSL2内でビルド：
 ```bash
-# Visual Studio Build Tools 2022のインストールが必要
+# WSL2のMinGWでクロスコンパイル
 # 詳細はREADME-WINDOWS.md参照
 
-cd src/typescript_deno
-npm install
+cd /mnt/c/path/to/ym2151-emulator-examples/src/typescript_deno
+npm install --build-from-source
 npm run build
 ```
 
+Windows側で実行：
+```powershell
+cd C:\path\to\ym2151-emulator-examples\src\typescript_deno
+npm start
+```
+
 **注意**: 
-- `speaker`ライブラリはC++のネイティブモジュールで、Visual Studio Build Toolsでコンパイルが必要
-- WSL2では使用できません（Windowsオーディオデバイスにアクセス不可）
+- `speaker`ライブラリはC++のネイティブモジュールで、WSL2のMinGWでクロスコンパイル
+- MinGWライブラリは静的リンクされるため、外部DLL依存なし
+- 実行はWindows上で行う（WSL2からはWindowsオーディオデバイスにアクセス不可）
 
 ### 実行
 ```bash
@@ -297,8 +306,9 @@ npm run start:ym2413
 ### speakerライブラリについて
 - node-gypでネイティブビルド
 - WindowsではWASAPI（Windows Audio Session API）を使用
-- Visual Studio Build Toolsまたはコンパイラが必要
-- **WSL2では使用不可**: WSL2はLinux環境のため、Windowsオーディオデバイスにアクセスできない
+- WSL2のMinGWでWindows用にクロスコンパイル
+- MinGWライブラリは静的リンクされ、外部DLL依存なし
+- **実行はWindows上で行う**: WSL2はLinux環境のため、Windowsオーディオデバイスにアクセスできない
 
 ---
 
@@ -346,11 +356,11 @@ Issue #16で要求されたすべての項目を実装完了:
 
 **推奨**: 現在のlibymfm.wasm実装を継続使用
 
-**ビルド環境**: Visual Studio Build Tools 2022（MSYS2からの変更）
+**ビルド環境**: WSL2 + MinGW（クロスコンパイル、静的リンク）
 
-**次のステップ**: Windows環境（Visual Studio Build Toolsセットアップ済み）での実行テストと結果の確認
+**次のステップ**: Windows環境での実行テストと結果の確認
 
-**重要**: WSL2では実装不可（Windowsオーディオデバイスアクセス不可）
+**重要**: ビルドはWSL2のMinGWで行い、実行はWindows上で行う
 
 ---
 

@@ -198,13 +198,7 @@ Issue #16の対処として、以下の項目を調査：
 - **理由**:
   - 最高精度のエミュレーション
   - 静的リンクでDLL依存なし
-  - EmscriptenまたはWSL2でのビルドが必要
-
-**WSL2について**:
-- ⚠️ **WSL2ではWindows上での実行不可**
-- WSL2でビルドしたバイナリはLinux用
-- Windowsのオーディオデバイスに直接アクセスできない
-- `speaker`ライブラリがWASAPI（Windows Audio Session API）を使用するため、Windows環境が必須
+  - Emscriptenでのビルドが推奨
 
 **実装方法**（参考、実装は保留）:
 ```bash
@@ -214,6 +208,8 @@ emcc nuked_opm.c -o nuked_opm.wasm \
   -s MODULARIZE=1 \
   -O3
 ```
+
+**注意**: WASMバイナリはプラットフォーム非依存のため、Windows/Linux/macOSで動作します。
 
 ---
 
