@@ -22,7 +22,7 @@ Pythonを使用したYM2151エミュレータの実装例です。Nuked-OPM（�
 ### 必要な環境
 - Windows 10/11
 - Python 3.8以上
-- MSYS2 (MinGW-w64環境)
+- WSL2（推奨）またはMSYS2 (MinGW-w64環境)
 
 ### Windowsでの環境構築
 
@@ -41,9 +41,52 @@ pip install -r requirements.txt
 
 #### 2. Nuked-OPM DLLのビルド
 
-Windows用の `libnukedopm.dll` をビルドする必要があります。MSYS2のMINGW64環境を使用します。
+Windows用の `libnukedopm.dll` をビルドする必要があります。
 
-##### MSYS2での手順：
+**依存関係について：**
+- Nuked-OPMは外部ライブラリに依存せず、標準Cライブラリのみを使用します
+- 静的リンクすることでランタイム依存を排除できます
+- MinGW DLLへの依存を避けるため、必ず静的リンクオプションを使用してください
+
+##### 方法1: WSL2を使用（推奨）
+
+WSL2（Windows Subsystem for Linux 2）を使用する方法が最もシンプルで推奨されます。
+
+1. **WSL2環境を起動**
+   ```bash
+   # PowerShellまたはコマンドプロンプトから
+   wsl
+   ```
+
+2. **必要なパッケージのインストール**（初回のみ）
+   ```bash
+   sudo apt update
+   sudo apt install gcc git mingw-w64
+   ```
+
+3. **Nuked-OPMのクローンとビルド**
+   ```bash
+   # 作業ディレクトリに移動
+   cd ~
+   
+   # Nuked-OPMをクローン
+   git clone https://github.com/nukeykt/Nuked-OPM.git
+   cd Nuked-OPM
+   
+   # Windows用DLLをビルド（静的リンク）
+   x86_64-w64-mingw32-gcc -shared -static-libgcc -O2 -o libnukedopm.dll opm.c
+   ```
+
+4. **DLLのコピー**
+   ```bash
+   # WSL2からWindowsファイルシステムにコピー
+   # 例: Cドライブのプロジェクトディレクトリにコピー
+   cp libnukedopm.dll /mnt/c/path/to/ym2151-emulator-examples/src/python/
+   ```
+
+##### 方法2: MSYS2を使用（代替手段）
+
+MSYS2を使用する場合も静的リンクを行います。
 
 1. **MSYS2 MINGW64環境を起動**
    - スタートメニューから「MSYS2 MINGW64」を起動してください
@@ -55,27 +98,34 @@ Windows用の `libnukedopm.dll` をビルドする必要があります。MSYS2�
 
 3. **Nuked-OPMのクローンとビルド**
    ```bash
-   # 作業ディレクトリに移動（例：ホームディレクトリ）
+   # 作業ディレクトリに移動
    cd ~
    
    # Nuked-OPMをクローン
    git clone https://github.com/nukeykt/Nuked-OPM.git
    cd Nuked-OPM
    
-   # DLLをビルド
-   gcc -shared -fPIC -O2 -o libnukedopm.dll opm.c
+   # DLLをビルド（静的リンク）
+   gcc -shared -static-libgcc -O2 -o libnukedopm.dll opm.c
    ```
 
 4. **DLLのコピー**
    ```bash
-   # DLLをPythonプロジェクトディレクトリにコピー
-   # （パスは環境に合わせて変更してください）
-   cp libnukedopm.dll /c/path/to/ym2151-emulator-examples/src/python/
+   # PowerShell/コマンドプロンプト、またはWindowsエクスプローラーでコピー
+   # コピー元: C:\msys64\home\<ユーザー名>\Nuked-OPM\libnukedopm.dll
+   # コピー先: ym2151-emulator-examples\src\python\libnukedopm.dll
    ```
-   
-   または、Windowsエクスプローラーで以下のファイルをコピー：
-   - コピー元: `C:\msys64\home\<ユーザー名>\Nuked-OPM\libnukedopm.dll`
-   - コピー先: `ym2151-emulator-examples\src\python\libnukedopm.dll`
+
+**ビルドしたDLLの依存関係確認：**
+
+ビルド後、DLLが外部DLLに依存していないことを確認できます：
+```bash
+# WSL2の場合
+objdump -p libnukedopm.dll | grep "DLL Name"
+
+# 期待される出力: msvcrt.dll, kernel32.dll などの標準Windowsライブラリのみ
+# mingw関連のDLL（libgcc_s_seh-1.dll など）が表示されないこと
+```
 
 ## 実行方法
 
@@ -124,9 +174,24 @@ FileNotFoundError: Nuked-OPM library not found
 
 ### DLLのビルドに失敗する
 
-- MSYS2 MINGW64環境で実行していることを確認してください（MSYS2 MSYSやMINGW32ではありません）
+- **WSL2の場合**: mingw-w64パッケージがインストールされているか確認: `x86_64-w64-mingw32-gcc --version`
+- **MSYS2の場合**: MSYS2 MINGW64環境で実行していることを確認してください（MSYS2 MSYSやMINGW32ではありません）
 - gccがインストールされているか確認: `gcc --version`
-- 必要に応じて再インストール: `pacman -S mingw-w64-x86_64-gcc`
+- 必要に応じて再インストール: 
+  - WSL2: `sudo apt install mingw-w64`
+  - MSYS2: `pacman -S mingw-w64-x86_64-gcc`
+
+### DLLが外部DLLに依存している
+
+ビルド時に `-static-libgcc` オプションを付け忘れた場合、MinGW DLLに依存してしまいます。
+```bash
+# 依存関係を確認（WSL2/MSYS2両方で使用可能）
+objdump -p libnukedopm.dll | grep "DLL Name"
+
+# mingw関連のDLL（libgcc_s_seh-1.dll など）が表示される場合は再ビルド
+```
+
+再ビルド時は必ず `-static-libgcc` オプションを含めてください。
 
 ### オーディオデバイスがない
 
