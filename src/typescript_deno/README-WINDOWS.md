@@ -1,15 +1,11 @@
-# TypeScript/Node.js版 YM2151エミュレータ実装
+# TypeScript/Node.js版 YM2151エミュレータ実装（Windows専用）
 
-> **注意**: このディレクトリ名は`typescript_deno`ですが、実装は**Node.js**です。
-> Denoでの直接オーディオ再生は技術的に実現不可能なため、Node.jsを使用しています。
-> 詳細は [DENO_INVESTIGATION.md](./DENO_INVESTIGATION.md) を参照してください。
-
-> **重要**: この実装は**Windows専用**です。詳細なセットアップ手順は [README-WINDOWS.md](./README-WINDOWS.md) を参照してください。
+> **注意**: この実装は**Windows専用**です。
 
 ## 概要
-TypeScriptとNode.jsを使用したYM2151エミュレータの最小実装例です。
+TypeScriptとNode.jsを使用したYM2151エミュレータの実装例です。
 
-libymfm.wasmライブラリを使用して、YM2151 (OPM) チップをエミュレートし、440HzのA4音を直接スピーカーから再生するシンプルなサンプルプログラムを提供します。
+libymfm.wasmライブラリを使用して、複数のYamahaチップ（YM2151, YM2149, YM2413など）をエミュレートし、440HzのA4音をリアルタイムでスピーカーから再生します。
 
 ## 実装バージョン
 
@@ -27,21 +23,27 @@ libymfm.wasmライブラリを使用して、YM2151 (OPM) チップをエミュ�
   - YM2151を含む複数のYamaha FMチップをサポート
 - **speaker**: Node.js用のPCMオーディオ出力ライブラリ（MIT & LGPL-2.1）
   - リポジトリ: https://github.com/TooTallNate/node-speaker
-  - WASAPIバックエンドをサポート（Windows）
+  - WASAPIバックエンドを使用（Windows標準）
+  - **ネイティブモジュール**: C++で書かれており、npm installで自動コンパイル
 
 ## 必要な環境
 - **Windows 10/11**
 - **Node.js 20.x以上**
 - **npm**
 
-## セットアップ
+## セットアップ手順
 
-**詳細なWindows専用セットアップ手順は [README-WINDOWS.md](./README-WINDOWS.md) を参照してください。**
+### 1. Node.jsのインストール
 
-**重要**: 
-- `speaker`ライブラリはネイティブモジュール（C++）で、`npm install`時に自動的にコンパイルされます
+1. [Node.js公式サイト](https://nodejs.org/)から最新のLTS版をダウンロード
+2. インストーラを実行してインストール
+3. インストール確認：
+   ```powershell
+   node --version
+   npm --version
+   ```
 
-### クイックスタート
+### 2. プロジェクトのセットアップ
 
 Windows PowerShellまたはコマンドプロンプトで：
 
@@ -49,55 +51,73 @@ Windows PowerShellまたはコマンドプロンプトで：
 # プロジェクトディレクトリに移動
 cd C:\path\to\ym2151-emulator-examples\src\typescript_deno
 
-# 依存関係のインストール（speakerは自動コンパイル）
+# 依存関係のインストール（speakerは自動的にコンパイルされます）
 npm install
 
 # TypeScriptのビルド
 npm run build
-
-# 実行（基本版）
-npm start
 ```
+
+**注意**: `npm install`の実行時、`speaker`パッケージが自動的にWindows用にネイティブコンパイルされます。これには数分かかる場合があります。
 
 ## 実行方法
 
+Windows PowerShellまたはコマンドプロンプトで：
+
 ### 基本版（YM2151、3秒間440Hz再生）
-```bash
+```powershell
 npm start
 ```
 
 ### キートグル版（0.5秒ごとにON/OFF、3秒間）
-```bash
+```powershell
 npm run start:keytoggle
 ```
 
 ### ランダムパラメータ版（CTRL+Cまで無限ループ）
-```bash
+```powershell
 npm run start:random
 ```
 
 ### YM2149版（PSGチップ、比較用）
-```bash
+```powershell
 npm run start:ym2149
 ```
 
 ### YM2413版（OPLLチップ、比較用）
-```bash
+```powershell
 npm run start:ym2413
 ```
 
-## 動作
-プログラムを実行すると、指定された秒数の440Hz（A4音）がスピーカーから直接再生されます。
+## 動作説明
 
-音声は`speaker`ライブラリを使用してリアルタイムにストリーミング再生されます。
+### 基本版（index.ts）
+- 3秒間の440Hz（A4音）をスピーカーから直接再生
+- 演奏終了時にバッファがすべて0かチェック（0ならエラー）
+
+### キートグル版（index-keytoggle.ts）
+- 3秒間、0.5秒ごとにkey onとkey offを切り替え
+- ADSRは最大速度でattack（AR=31）、最小速度でdecay（D1R=0, D2R=0）
+- TLはすべて最小値（0 = 最大音量）
+
+### ランダムパラメータ版（index-random.ts）
+- CTRL+Cを押すまで無限ループ
+- 0.5秒ごとにkey onとkey offを切り替え
+- key on時にADSR、TL、その他音量関連レジスタをすべてランダム化
+- 適切なkey on（全オペレータ有効）を確実に実行
+
+### YM2149版・YM2413版
+- YM2151との比較用
+- YM2151固有の問題かどうかを切り分けるために使用
+- 各チップの特性に合わせたシンプルな音声生成
 
 ## プロジェクト構成
 ```
 typescript_deno/
 ├── src/
-│   ├── index.ts              # メインプログラム（YM2151の設定と音声生成）
-│   ├── index-keytoggle.ts    # キートグル版
-│   ├── index-random.ts       # ランダムパラメータ版
+│   ├── index.ts              # 基本版（YM2151、3秒間）
+│   ├── index-keytoggle.ts    # キートグル版（YM2151、3秒間）
+│   ├── index-random.ts       # ランダムパラメータ版（YM2151、無限ループ）
 │   ├── index-ym2149.ts       # YM2149版（比較用）
 │   ├── index-ym2413.ts       # YM2413版（比較用）
 │   └── libymfm.ts            # libymfm.wasmのTypeScriptラッパー
@@ -107,11 +127,12 @@ typescript_deno/
 ├── package.json
 ├── tsconfig.json
 ├── README.md                 # このファイル
-└── README-WINDOWS.md         # Windows専用セットアップ詳細
+└── README-WINDOWS.md         # Windowsセットアップ詳細版
 ```
 
 ## YM2151レジスタ設定
-このサンプルでは、以下のような基本的なFM音源の設定を行っています：
+
+基本版とキートグル版では、以下のような設定を行っています：
 
 - **チャンネル0を使用**
 - **アルゴリズム7（CON=7）**: 全てのオペレータがキャリア
@@ -128,11 +149,11 @@ typescript_deno/
 ## 技術詳細
 
 ### libymfm.wasm API
-このプロジェクトでは、libymfm.wasmの低レベルAPIを使用して直接YM2151チップを制御しています：
+このプロジェクトでは、libymfm.wasmの低レベルAPIを使用して直接チップを制御しています：
 
 1. **サウンドスロットの作成**: チップとオーディオ出力の設定
-2. **チップの追加**: YM2151チップを指定したクロック周波数で追加
-3. **レジスタへの書き込み**: YM2151のレジスタに値を書き込んで音色を設定
+2. **チップの追加**: 各チップを指定したクロック周波数で追加
+3. **レジスタへの書き込み**: チップのレジスタに値を書き込んで音色を設定
 4. **リアルタイム再生**: 60Hzのティックレートでチップを駆動し、オーディオサンプルを生成・ストリーミング再生
 
 ### オーディオ出力
@@ -155,20 +176,75 @@ typescript_deno/
 - すべて0の場合、エラーメッセージを表示してプロセスを終了（exit code 1）
 - これにより、チップが正しく音声を生成しているかを確認できます
 
+## トラブルシューティング
+
+### npm installでのエラー
+
+`npm install`実行時にエラーが発生する場合：
+
+**解決策**:
+1. Node.jsのバージョンを確認（20.x以上が必要）:
+   ```powershell
+   node --version
+   ```
+2. npmのキャッシュをクリア:
+   ```powershell
+   npm cache clean --force
+   ```
+3. node_modulesを削除して再インストール:
+   ```powershell
+   Remove-Item -Recurse -Force node_modules
+   npm install
+   ```
+
+### 音が出ない
+1. Windowsの音量設定を確認
+2. デフォルトの再生デバイスが正しく設定されているか確認
+3. 他のアプリケーションがオーディオデバイスを占有していないか確認
+4. バッファゼロチェックのエラーメッセージを確認
+
+### すべてのバッファが0のエラー
+```
+ERROR: All generated audio buffers were zero!
+```
+
+**原因の可能性**:
+1. YM2151のレジスタ設定が間違っている
+2. libymfm.wasmの初期化に問題がある
+3. チップのクロック周波数が不適切
+
+**デバッグ手順**:
+1. YM2149版やYM2413版を試して、他のチップでも同じ問題が起きるか確認
+2. レジスタ設定を再確認
+3. ランダムパラメータ版で様々な設定を試す
+
 ## カスタマイズ
+
 各 `.ts` ファイルを編集することで、以下のカスタマイズが可能です：
 
-- 音の高さ（KCレジスタの値を変更）
-- 音色（アルゴリズム、オペレータパラメータの変更）
-- 音の長さ（DURATION_SECONDS定数の変更）
-- サンプリングレート（SAMPLING_RATE定数の変更）
+- **音の高さ**: KCレジスタの値を変更
+- **音色**: アルゴリズム、オペレータパラメータの変更
+- **音の長さ**: DURATION_SECONDS定数の変更
+- **サンプリングレート**: SAMPLING_RATE定数の変更
+- **トグル間隔**: TOGGLE_INTERVAL_SECONDS定数の変更（キートグル版・ランダム版）
 
 ## 参考リンク
+
+### チップ仕様
 - [YM2151 データシート](https://www.vgmpf.com/Wiki/index.php?title=YM2151)
+- [YM2149 データシート](https://www.vgmpf.com/Wiki/index.php?title=YM2149)
+- [YM2413 データシート](https://www.vgmpf.com/Wiki/index.php?title=YM2413)
+
+### ライブラリ
 - [libymfm.wasm リポジトリ](https://github.com/h1romas4/libymfm.wasm)
 - [ymfm オリジナル](https://github.com/aaronsgiles/ymfm)
+- [node-speaker リポジトリ](https://github.com/TooTallNate/node-speaker)
+
+### ツール
+- [Node.js公式サイト](https://nodejs.org/)
 
 ## ライセンスとセキュリティ
+
 このプロジェクト自体はMITライセンスです。
 
 使用しているライブラリ：
@@ -184,4 +260,3 @@ typescript_deno/
 - このサンプルプログラムはローカル環境での実行を想定しており、外部からの攻撃対象にはなりません
 
 本番環境でより安全なオーディオ出力が必要な場合は、代替ライブラリ（`naudiodon2`など）の使用を検討してください。
-
