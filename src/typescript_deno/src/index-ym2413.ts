@@ -123,48 +123,47 @@ async function main() {
           return;
         }
 
-        // Update sound driver
-        chip.soundSlotUpdate(SOUND_SLOT_INDEX, 1);
+        // Update sound driver (tick) until stream buffer is filled
+        // With 60Hz tick rate and 44100Hz sample rate, each tick generates ~735 samples
+        // So we need multiple ticks to fill a 4096 sample chunk
+        while (!chip.soundSlotIsStreamFilled(SOUND_SLOT_INDEX)) {
+          chip.soundSlotUpdate(SOUND_SLOT_INDEX, 1);
+        }
 
-        // Check if stream buffer is filled
-        if (chip.soundSlotIsStreamFilled(SOUND_SLOT_INDEX)) {
-          // Generate samples
-          chip.soundSlotStream(SOUND_SLOT_INDEX);
-          
-          // Get the audio buffer
-          const buffer = chip.soundSlotGetSamplingRef(SOUND_SLOT_INDEX, SAMPLE_CHUNK_SIZE);
-          
-          // Check if buffer contains non-zero values (only if we haven't found any yet)
-          // This optimization skips the check once we've confirmed audio is being generated
-          if (allBuffersAreZero) {
-            for (let i = 0; i < buffer.length; i++) {
-              if (buffer[i] !== 0) {
-                allBuffersAreZero = false;
-                break;
-              }
+        // Generate samples
+        chip.soundSlotStream(SOUND_SLOT_INDEX);
+        
+        // Get the audio buffer
+        const buffer = chip.soundSlotGetSamplingRef(SOUND_SLOT_INDEX, SAMPLE_CHUNK_SIZE);
+        
+        // Check if buffer contains non-zero values (only if we haven't found any yet)
+        // This optimization skips the check once we've confirmed audio is being generated
+        if (allBuffersAreZero) {
+          for (let i = 0; i < buffer.length; i++) {
+            if (buffer[i] !== 0) {
+              allBuffersAreZero = false;
+              break;
             }
           }
-          
-          // Convert Int16Array to Buffer for speaker
-          const audioBuffer = Buffer.from(buffer.buffer, buffer.byteOffset, buffer.byteLength);
-          
-          // Write to speaker
-          const canContinue = speaker.write(audioBuffer);
-          
-          generatedChunks++;
+        }
+        
+        // Convert Int16Array to Buffer for speaker
+        const audioBuffer = Buffer.from(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+        
+        // Write to speaker
+        const canContinue = speaker.write(audioBuffer);
+        
+        generatedChunks++;
 
-          // Progress indicator
-          const progress = Math.floor((generatedChunks / totalChunks) * 100);
-          const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-          process.stdout.write(`\rProgress: ${progress}% (${elapsed}s)`);
+        // Progress indicator
+        const progress = Math.floor((generatedChunks / totalChunks) * 100);
+        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+        process.stdout.write(`\rProgress: ${progress}% (${elapsed}s)`);
 
-          if (canContinue) {
-            setImmediate(generateNextChunk);
-          } else {
-            speaker.once('drain', generateNextChunk);
-          }
-        } else {
+        if (canContinue) {
           setImmediate(generateNextChunk);
+        } else {
+          speaker.once('drain', generateNextChunk);
         }
       };
 
