@@ -5,7 +5,6 @@
 > 詳細は [DENO_INVESTIGATION.md](./DENO_INVESTIGATION.md) を参照してください。
 
 > **重要**: この実装は**Windows専用**です。詳細なセットアップ手順は [README-WINDOWS.md](./README-WINDOWS.md) を参照してください。
-> **ビルド環境**: WSL2上のMinGWでクロスコンパイルし、Windows上で実行します。
 
 ## 概要
 TypeScriptとNode.jsを使用したYM2151エミュレータの最小実装例です。
@@ -31,40 +30,30 @@ libymfm.wasmライブラリを使用して、YM2151 (OPM) チップをエミュ�
   - WASAPIバックエンドをサポート（Windows）
 
 ## 必要な環境
-- **Windows 10/11** （実行環境）
-- **WSL2 (Ubuntu)** （ビルド環境）
-- **Node.js 20.x以上** （Windows側）
-- **npm または yarn**
+- **Windows 10/11**
+- **Node.js 20.x以上**
+- **npm**
 
 ## セットアップ
 
 **詳細なWindows専用セットアップ手順は [README-WINDOWS.md](./README-WINDOWS.md) を参照してください。**
 
 **重要**: 
-- `speaker`ライブラリはネイティブモジュール（C++）で、WSL2のMinGWでクロスコンパイルします
-- MinGWライブラリは静的リンクされるため、外部DLL依存はありません
-- 実行はWindows上で行います（WSL2からはWindowsオーディオデバイスにアクセス不可）
+- `speaker`ライブラリはネイティブモジュール（C++）で、`npm install`時に自動的にコンパイルされます
 
-### クイックスタート（WSL2 + MinGW セットアップ済みの場合）
+### クイックスタート
 
-WSL2内でビルド：
+Windows PowerShellまたはコマンドプロンプトで：
 
-```bash
-# WSL2からプロジェクトディレクトリにアクセス
-cd /mnt/c/path/to/ym2151-emulator-examples/src/typescript_deno
+```powershell
+# プロジェクトディレクトリに移動
+cd C:\path\to\ym2151-emulator-examples\src\typescript_deno
 
-# 依存関係のインストール（MinGWでクロスコンパイル）
-npm install --build-from-source
+# 依存関係のインストール（speakerは自動コンパイル）
+npm install
 
 # TypeScriptのビルド
 npm run build
-```
-
-Windows側で実行：
-
-```powershell
-# Windows PowerShellまたはコマンドプロンプトで
-cd C:\path\to\ym2151-emulator-examples\src\typescript_deno
 
 # 実行（基本版）
 npm start

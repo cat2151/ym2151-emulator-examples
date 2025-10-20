@@ -234,26 +234,23 @@ Path に追加:
 
 ### セットアップ（Windows）
 
-WSL2内でビルド：
-```bash
-# WSL2のMinGWでクロスコンパイル
-# 詳細はREADME-WINDOWS.md参照
+Windows PowerShellまたはコマンドプロンプトで：
 
-cd /mnt/c/path/to/ym2151-emulator-examples/src/typescript_deno
-npm install --build-from-source
-npm run build
-```
-
-Windows側で実行：
 ```powershell
 cd C:\path\to\ym2151-emulator-examples\src\typescript_deno
+
+# 依存関係のインストール（speakerは自動コンパイル）
+npm install
+
+# TypeScriptのビルド
+npm run build
+
+# 実行
 npm start
 ```
 
 **注意**: 
-- `speaker`ライブラリはC++のネイティブモジュールで、WSL2のMinGWでクロスコンパイル
-- MinGWライブラリは静的リンクされるため、外部DLL依存なし
-- 実行はWindows上で行う（WSL2からはWindowsオーディオデバイスにアクセス不可）
+- `speaker`ライブラリはC++のネイティブモジュールで、`npm install`時に自動的にコンパイルされます
 
 ### 実行
 ```bash
@@ -306,9 +303,8 @@ npm run start:ym2413
 ### speakerライブラリについて
 - node-gypでネイティブビルド
 - WindowsではWASAPI（Windows Audio Session API）を使用
-- WSL2のMinGWでWindows用にクロスコンパイル
-- MinGWライブラリは静的リンクされ、外部DLL依存なし
-- **実行はWindows上で行う**: WSL2はLinux環境のため、Windowsオーディオデバイスにアクセスできない
+- `npm install`時に自動的にWindows用にコンパイルされる
+- 外部DLL依存なし
 
 ---
 
@@ -356,11 +352,9 @@ Issue #16で要求されたすべての項目を実装完了:
 
 **推奨**: 現在のlibymfm.wasm実装を継続使用
 
-**ビルド環境**: WSL2 + MinGW（クロスコンパイル、静的リンク）
+**ビルド環境**: Windows上でnpm install（自動コンパイル）
 
 **次のステップ**: Windows環境での実行テストと結果の確認
-
-**重要**: ビルドはWSL2のMinGWで行い、実行はWindows上で行う
 
 ---
 

@@ -1,6 +1,6 @@
 # TypeScript/Node.js版 YM2151エミュレータ実装（Windows専用）
 
-> **注意**: この実装は**Windows専用**です。Node.jsの`speaker`ライブラリは、Windowsでネイティブコンパイルが必要なため、WSL2上のMinGWでクロスコンパイルします。
+> **注意**: この実装は**Windows専用**です。
 
 ## 概要
 TypeScriptとNode.jsを使用したYM2151エミュレータの実装例です。
@@ -24,110 +24,43 @@ libymfm.wasmライブラリを使用して、複数のYamahaチップ（YM2151, 
 - **speaker**: Node.js用のPCMオーディオ出力ライブラリ（MIT & LGPL-2.1）
   - リポジトリ: https://github.com/TooTallNate/node-speaker
   - WASAPIバックエンドを使用（Windows標準）
-  - **ネイティブモジュール**: C++で書かれており、MinGWでクロスコンパイルが必要
+  - **ネイティブモジュール**: C++で書かれており、npm installで自動コンパイル
 
 ## 必要な環境
-- **Windows 10/11** （実行環境）
-- **WSL2 (Ubuntu 22.04以降推奨)** （ビルド環境）
-- **Node.js 20.x以上** （Windows側にインストール）
+- **Windows 10/11**
+- **Node.js 20.x以上**
+- **npm**
 
 ## セットアップ手順
 
-### 1. WSL2のセットアップ
+### 1. Node.jsのインストール
 
-#### 1-1. WSL2のインストール（未インストールの場合）
+1. [Node.js公式サイト](https://nodejs.org/)から最新のLTS版をダウンロード
+2. インストーラを実行してインストール
+3. インストール確認：
+   ```powershell
+   node --version
+   npm --version
+   ```
 
-Windows PowerShell（管理者権限）で実行：
+### 2. プロジェクトのセットアップ
 
-```powershell
-wsl --install
-```
-
-インストール完了後、Windowsを再起動。
-
-#### 1-2. WSL2でMinGWと依存パッケージをインストール
-
-WSL2 (Ubuntu)のターミナルで実行：
-
-```bash
-# パッケージリストを更新
-sudo apt update
-
-# MinGW-w64クロスコンパイラとビルドツールをインストール
-sudo apt install -y mingw-w64 gcc-mingw-w64-x86-64 g++-mingw-w64-x86-64
-sudo apt install -y build-essential python3 python3-pip
-sudo apt install -y nodejs npm
-
-# Node.jsのバージョンを確認（20.x以上推奨）
-node --version
-```
-
-#### 1-3. node-gypの設定（WSL2内）
-
-WSL2のターミナルで実行：
-
-```bash
-# node-gypをインストール
-npm install -g node-gyp
-
-# MinGWクロスコンパイル設定を追加
-export CC=x86_64-w64-mingw32-gcc
-export CXX=x86_64-w64-mingw32-g++
-export LINK=x86_64-w64-mingw32-g++
-export AR=x86_64-w64-mingw32-ar
-```
-
-これらの環境変数を永続化する場合は `~/.bashrc` に追加：
-
-```bash
-echo 'export CC=x86_64-w64-mingw32-gcc' >> ~/.bashrc
-echo 'export CXX=x86_64-w64-mingw32-g++' >> ~/.bashrc
-echo 'export LINK=x86_64-w64-mingw32-g++' >> ~/.bashrc
-echo 'export AR=x86_64-w64-mingw32-ar' >> ~/.bashrc
-source ~/.bashrc
-```
-
-## プロジェクトのセットアップ
-
-### 2. speakerライブラリのクロスコンパイル（WSL2内）
-
-WSL2のターミナルで、プロジェクトディレクトリに移動：
-
-```bash
-# WSL2からWindows側のプロジェクトディレクトリにアクセス
-cd /mnt/c/path/to/ym2151-emulator-examples/src/typescript_deno
-
-# 依存関係のインストール（speakerをMinGWでクロスコンパイル）
-npm install --build-from-source
-
-# speakerのビルド設定を確認
-npm run build
-```
-
-**重要な注意点**:
-- `--build-from-source` オプションでソースからビルドすることを明示
-- MinGW環境変数（CC, CXX等）が正しく設定されていることを確認
-- ビルドされたネイティブモジュール（.node）はWindows用バイナリ
-- MinGWライブラリは静的リンクされるため、外部DLL依存なし
-
-### 3. TypeScriptのビルド（WSL2またはWindows）
-
-WSL2で実行：
-
-```bash
-npm run build
-```
-
-または、Windows側で実行：
+Windows PowerShellまたはコマンドプロンプトで：
 
 ```powershell
+# プロジェクトディレクトリに移動
 cd C:\path\to\ym2151-emulator-examples\src\typescript_deno
+
+# 依存関係のインストール（speakerは自動的にコンパイルされます）
+npm install
+
+# TypeScriptのビルド
 npm run build
 ```
 
-## 実行方法（Windows側）
+**注意**: `npm install`の実行時、`speaker`パッケージが自動的にWindows用にネイティブコンパイルされます。これには数分かかる場合があります。
 
-**重要**: 実行はWindows側のNode.jsで行います。WSL2ではWindowsのオーディオデバイスにアクセスできないため、ビルドのみWSL2で行い、実行はWindows上で行います。
+## 実行方法
 
 Windows PowerShellまたはコマンドプロンプトで：
 
@@ -245,44 +178,26 @@ typescript_deno/
 
 ## トラブルシューティング
 
-### speakerのビルドエラー（WSL2内）
-```
-Error: `make` failed with exit code: 2
-```
+### npm installでのエラー
+
+`npm install`実行時にエラーが発生する場合：
 
 **解決策**:
-1. MinGW環境変数が正しく設定されているか確認:
-   ```bash
-   echo $CC
-   # x86_64-w64-mingw32-gcc と表示されるはず
+1. Node.jsのバージョンを確認（20.x以上が必要）:
+   ```powershell
+   node --version
    ```
-2. MinGWパッケージが正しくインストールされているか確認:
-   ```bash
-   which x86_64-w64-mingw32-gcc
-   # /usr/bin/x86_64-w64-mingw32-gcc と表示されるはず
+2. npmのキャッシュをクリア:
+   ```powershell
+   npm cache clean --force
    ```
-3. `~/.bashrc`を再読み込み:
-   ```bash
-   source ~/.bashrc
-   ```
-4. `npm install --build-from-source`を再実行
-
-### Pythonが見つからないエラー（WSL2内）
-```
-gyp ERR! find Python
-```
-
-**解決策**:
-1. WSL2内のPythonがインストールされているか確認:
-   ```bash
-   python3 --version
-   ```
-2. python3が見つからない場合はインストール:
-   ```bash
-   sudo apt install python3
+3. node_modulesを削除して再インストール:
+   ```powershell
+   Remove-Item -Recurse -Force node_modules
+   npm install
    ```
 
-### 音が出ない（Windows側）
+### 音が出ない
 1. Windowsの音量設定を確認
 2. デフォルトの再生デバイスが正しく設定されているか確認
 3. 他のアプリケーションがオーディオデバイスを占有していないか確認
@@ -302,16 +217,6 @@ ERROR: All generated audio buffers were zero!
 1. YM2149版やYM2413版を試して、他のチップでも同じ問題が起きるか確認
 2. レジスタ設定を再確認
 3. ランダムパラメータ版で様々な設定を試す
-
-## WSL2とMinGWについて
-
-**ビルド環境としてWSL2を使用する理由**:
-
-- WSL2上のMinGWでWindows用バイナリをクロスコンパイル可能
-- MinGWライブラリは静的リンクされるため、外部DLL依存なし
-- ビルドされた.nodeファイルはWindows上で実行可能
-
-**注意**: 実行はWindows側で行う必要があります（WSL2からはWindowsオーディオデバイスにアクセス不可）。
 
 ## カスタマイズ
 
@@ -336,8 +241,6 @@ ERROR: All generated audio buffers were zero!
 - [node-speaker リポジトリ](https://github.com/TooTallNate/node-speaker)
 
 ### ツール
-- [WSL2公式ドキュメント](https://docs.microsoft.com/ja-jp/windows/wsl/)
-- [MinGW-w64](https://www.mingw-w64.org/)
 - [Node.js公式サイト](https://nodejs.org/)
 
 ## ライセンスとセキュリティ
