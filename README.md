@@ -4,13 +4,25 @@
 
 ## 状況
 
-開発中のため、いずれも音が鳴らない状況です。
+YM2151エミュレータライブラリは、[ym2151-emu-win-bin](https://github.com/cat2151/ym2151-emu-win-bin) リポジトリから取得できます。
 
-音が鳴るようにすべく作業を進めています。
+各言語版の実装は、このリポジトリからビルド済みバイナリをダウンロードして使用します。
 
-関連リポジトリとして、
-https://github.com/cat2151/ym2151-emu-win-bin
-での作業を進めています。
+### ライブラリの取得方法
+
+```powershell
+# すべての言語のライブラリをダウンロード
+python scripts\download_libs.py
+
+# 特定の言語のみ（python, rust, go, typescriptから選択）
+python scripts\download_libs.py python
+```
+
+または、MSYS2環境でローカルビルドすることも可能です:
+
+```powershell
+python scripts\build_libs.py
+```
 
 ## 概要
 
@@ -47,38 +59,47 @@ ym2151-emulator-examples/
 
 ## 実装ステータス
 
-| 言語 | 推奨度 | ステータス | 実装アプローチ |
-|------|--------|-----------|--------------|
-| Rust | ⭐⭐⭐⭐⭐ | 🚧 実装予定 | libymfm.wasm |
-| TypeScript/Node.js | ⭐⭐⭐⭐⭐ | ✅ 実装完了 | libymfm.wasm |
-| Python | ⭐⭐⭐⭐ | 🚧 実装予定 | Nuked-OPM + ctypes |
-| Rust | ⭐⭐⭐⭐⭐ | ✅ **完了** | Nuked-OPM + FFI + cpal |
-| TypeScript/Deno | ⭐⭐⭐⭐⭐ | 🚧 実装予定 | libymfm.wasm |
-| Python | ⭐⭐⭐⭐ | 🚧 実装予定 | Nuked-OPM + ctypes |
-| Go | ⭐⭐⭐⭐ | ✅ 実装完了 | Nuked-OPM + CGO |
-| Python | ⭐⭐⭐⭐ | ✅ 実装完了 | Nuked-OPM + ctypes |
-| Go | ⭐⭐⭐⭐ | 🚧 実装予定 | Nuked-OPM/ymfm + CGO |
+| 言語 | ライブラリ取得 | ステータス | 実装アプローチ |
+|------|--------------|-----------|--------------|
+| Python | ym2151-emu-win-bin | ✅ 動作可能 | Nuked-OPM + ctypes + speaker |
+| Rust | ソースビルド | ✅ 動作可能 | Nuked-OPM + FFI + cpal |
+| TypeScript/Node.js | libymfm.wasm | ✅ 動作可能 | libymfm.wasm + speaker |
+| Go | ym2151-emu-win-bin | 🚧 準備中 | Nuked-OPM + CGO + PortAudio |
+
+### 注意事項
+
+**Python版**が最もシンプルで、すぐに動作します。
+**Rust版**と**TypeScript/Node.js版**も動作しますが、セットアップがやや複雑です。
+**Go版**は現在準備中です。
 
 ## クイックスタート
 
-### 一括ビルド＆実行（Windows専用）
+**初めての方へ**: [QUICKSTART.md](QUICKSTART.md) で最も簡単な始め方を確認できます。
 
-すべての実装を一度にビルドし、メニューから選択して実行できます：
+### ライブラリの取得
 
-```bash
-python build_and_run.py
+```powershell
+# すべての言語のライブラリをダウンロード
+python scripts\download_libs.py
+
+# 特定の言語のみ（python, rust, go, typescriptから選択）
+python scripts\download_libs.py python
 ```
 
-詳細は **[BUILD_AND_RUN.md](BUILD_AND_RUN.md)** を参照してください。
+または、MSYS2環境でローカルビルドすることも可能です:
+
+```powershell
+python scripts\build_libs.py
+```
 
 ### 個別の実装
 
 各言語の実装については、以下のディレクトリを参照してください：
 
-- [Rust版](src/rust/README.md)
-- [Go版](src/go/README.md)
-- [TypeScript/Deno版](src/typescript_deno/README.md)
-- [Python版](src/python/README.md)
+- [Python版](src/python/README.md) - **推奨**: 最も簡単にセットアップできます
+- [Rust版](src/rust/README.md) - 高性能、MSYS2が必要
+- [TypeScript/Node.js版](src/typescript_deno/README.md) - WebAssembly版エミュレータ
+- [Go版](src/go/README.md) - 準備中
 
 ## 実装計画
 

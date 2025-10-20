@@ -30,6 +30,11 @@ libymfm.wasmライブラリを使用して、YM2151 (OPM) チップをエミュ�
   - WASAPIバックエンドをサポート（Windows）
 
 ## 必要な環境
+- **Windows 10/11専用**
+- Node.js 20.x以上
+- npm または yarn
+
+**注意**: speakerライブラリのビルドにMSYS2が必要な場合があります。
 - **Windows 10/11**
 - **Node.js 20.x以上**
 - **npm**
@@ -43,6 +48,40 @@ libymfm.wasmライブラリを使用して、YM2151 (OPM) チップをエミュ�
 
 ### クイックスタート
 
+### 1. Node.jsのインストール
+
+[Node.js公式サイト](https://nodejs.org/)から最新のLTS版をダウンロードしてインストールしてください。
+
+### 2. 依存関係のインストール
+
+```powershell
+npm install
+```
+
+**注意**: `speaker`ライブラリのネイティブビルドに失敗する場合があります。
+
+失敗した場合の対処法：
+
+1. エラーメッセージを確認し、MSYS2のインストールが必要か確認
+2. または、[ym2151-emu-win-bin](https://github.com/cat2151/ym2151-emu-win-bin) リポジトリをチェック：
+   - リポジトリの `binaries/typescript/` ディレクトリに `binding.node` があるか確認
+   - ある場合は、`node_modules/speaker/build/Release/` にコピー
+
+MSYS2を使ってビルドする場合：
+1. [MSYS2](https://www.msys2.org/) をインストール
+2. MSYS2 MINGW64ターミナルで `pacman -S mingw-w64-x86_64-gcc` を実行
+3. PowerShellで `npm install` を再実行
+
+### 3. ビルド
+
+```powershell
+npm run build
+```
+
+### 4. 実行
+
+```powershell
+npm start
 Windows PowerShellまたはコマンドプロンプトで：
 
 ```powershell

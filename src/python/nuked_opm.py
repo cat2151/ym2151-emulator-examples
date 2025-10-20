@@ -9,26 +9,21 @@ from typing import Tuple
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Load the Nuked-OPM shared library
-# Try different platform-specific library names
-_lib_names = ['libnukedopm.so', 'libnukedopm.dylib', 'libnukedopm.dll']
+# Windows専用：ym2151.dllを使用
+_lib_name = 'ym2151.dll'
+_lib_path = os.path.join(SCRIPT_DIR, _lib_name)
 _lib = None
-_lib_path = None
 
-for lib_name in _lib_names:
-    path = os.path.join(SCRIPT_DIR, lib_name)
-    if os.path.exists(path):
-        _lib_path = path
-        try:
-            _lib = ctypes.CDLL(_lib_path)
-            break
-        except OSError as e:
-            print(f"Warning: Found {lib_name} but failed to load: {e}")
-
-if _lib is None:
+if os.path.exists(_lib_path):
+    try:
+        _lib = ctypes.CDLL(_lib_path)
+    except OSError as e:
+        raise OSError(f"Failed to load {_lib_name}: {e}")
+else:
     raise FileNotFoundError(
-        f"Nuked-OPM library not found in {SCRIPT_DIR}.\n"
-        f"Expected one of: {', '.join(_lib_names)}\n"
-        f"Run build_library.sh to build the library."
+        f"Nuked-OPM library not found: {_lib_path}\n"
+        f"Please run: python scripts\\download_libs.py\n"
+        f"Or download ym2151.dll from: https://github.com/cat2151/ym2151-emu-win-bin"
     )
 
 

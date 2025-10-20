@@ -235,3 +235,9 @@ deno.lock
 *.ogg
 *.flac
 *.pcm
+
+# YM2151 Emulator Libraries (downloaded/built from ym2151-emu-win-bin)
+src/python/vendor/
+src/python/ym2151.dll
+src/rust/lib/
+src/go/lib/

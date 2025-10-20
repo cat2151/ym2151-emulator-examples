@@ -9,7 +9,7 @@ Rustを使用した、実際のYM2151エミュレータライブラリ（Nuked-O
 - ✅ 本物のYM2151エミュレータ（Nuked-OPM）を使用
 - ✅ サイクル精度の高いエミュレーション
 - ✅ RustのFFIバインディングで安全にラップ
-- ✅ Windows環境で動作（ネイティブビルド）
+- ✅ **Windows専用**（ネイティブビルド）
 - ✅ 440Hz（A4音）のFM音源サウンドを生成
 - ✅ Nuked-OPM（C言語）を静的リンクでビルド
 
@@ -20,28 +20,15 @@ Rustを使用した、実際のYM2151エミュレータライブラリ（Nuked-O
   - ビルド時に **Nuked-OPM（C言語ライブラリ）** をコンパイルして静的リンクします
 
 ## 必要な環境
-- Windows 10/11
+- **Windows 10/11専用**
 - Rust 1.70以降
-- Visual Studio Build Tools 2022（C++コンパイラ - Nuked-OPM（C言語）のコンパイルに必要）
+- MSYS2（Cコンパイラ - Nuked-OPMのコンパイルに必要）
 
 ## セットアップと実行
 
-### 1. Visual Studio Build Tools 2022のインストール
+### 1. Rustのインストール
 
-PowerShellを管理者権限で開き、以下を実行：
-
-```powershell
-# wingetを使用してVisual Studio Build Tools 2022をインストール
-winget install --id Microsoft.VisualStudio.2022.BuildTools --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
-```
-
-インストール完了後、新しいPowerShellウィンドウを開いてください（環境変数を反映させるため）。
-
-> **注**: Visual Studio Build Toolsは、Nuked-OPM（C言語ライブラリ）をWindowsネイティブビルドでコンパイルするために必要です。WSL2を使用する方法に比べて、ビルドプロセスがシンプルで安定性が高くなります。
-
-### 2. Rustのインストール
-
-新しいPowerShellで以下を実行：
+PowerShellで以下を実行：
 
 ```powershell
 # Rustのインストール
@@ -50,30 +37,71 @@ winget install --id Rustlang.Rustup
 
 または、[Rust公式サイト](https://www.rust-lang.org/ja/tools/install)から `rustup-init.exe` をダウンロードして実行することもできます。
 
-インストール完了後、新しいPowerShellウィンドウを開いてください。
+インストール完了後、**新しいPowerShellウィンドウ**を開いてください。
 
-### 3. ビルド
+### 2. MSYS2のインストール
+
+MSYS2は、Nuked-OPM（C言語ライブラリ）をコンパイルするために必要です。
+
+1. [MSYS2公式サイト](https://www.msys2.org/) からインストーラーをダウンロード
+2. インストーラーを実行してデフォルト設定でインストール（`C:\msys64`）
+3. MSYS2 MINGW64ターミナルを開く
+4. 以下のコマンドでGCCをインストール：
+
+```bash
+pacman -S mingw-w64-x86_64-gcc
+```
+
+### 3. Rust toolchainの設定
+
+PowerShellで以下を実行：
+
+```powershell
+# x86_64-pc-windows-gnu toolchainを追加
+rustup target add x86_64-pc-windows-gnu
+
+# デフォルトのtoolchainをGNUに設定（このプロジェクト用）
+rustup default stable-x86_64-pc-windows-gnu
+```
+
+### 4. 環境変数の設定
+
+PowerShellで以下を実行して、現在のセッションでMSYS2のPATHを追加：
+
+```powershell
+$env:PATH = "C:\msys64\mingw64\bin;$env:PATH"
+```
+
+**または**、システム環境変数に恒久的に追加：
+
+1. Windowsの設定 → システム → バージョン情報 → システムの詳細設定
+2. 環境変数をクリック
+3. ユーザー環境変数のPathを編集
+4. 新規で `C:\msys64\mingw64\bin` を追加
+
+### 5. ビルドと実行
 
 プロジェクトディレクトリに移動してビルド：
 
 ```powershell
 # プロジェクトディレクトリに移動
-cd C:\path\to\ym2151-emulator-examples\src\rust
+cd <プロジェクトのパス>\ym2151-emulator-examples\src\rust
 
-# ビルド
-cargo build --release
-```
-
-### 4. 実行
-
-```powershell
-# 実行
+# ビルドと実行を一度に
 cargo run --release
 ```
 
-実行すると、スピーカーから2秒間の440Hz（A4音）のFM音源サウンドが再生されます。
+または、ビルドと実行を分けて行う：
 
-> **ヒント**: `cargo run --release` でビルドと実行を一度に行うことができます。
+```powershell
+# ビルドのみ
+cargo build --release
+
+# 実行のみ
+.\target\release\ym2151-example.exe
+```
+
+実行すると、スピーカーから2秒間の440Hz（A4音）のFM音源サウンドが再生されます。
 
 ## 実装の詳細
 
@@ -131,22 +159,33 @@ self.write(0xE0 + op, 0x0F); // RR (Release Rate)
 
 ### ビルドエラー: "C compiler not found" または "link.exe not found"
 
-Visual Studio Build Toolsが正しくインストールされていない可能性があります。
+MSYS2のGCCが正しくインストールされていないか、PATHに追加されていない可能性があります。
 
 ```powershell
-# Visual Studio Build Toolsの再インストール
-winget install --id Microsoft.VisualStudio.2022.BuildTools --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+# MSYS2 MINGW64ターミナルでGCCを再インストール
+pacman -S mingw-w64-x86_64-gcc
+
+# PowerShellでPATHを確認
+$env:PATH
+
+# PATHにC:\msys64\mingw64\binが含まれていない場合は追加
+$env:PATH = "C:\msys64\mingw64\bin;$env:PATH"
 ```
 
-インストール後、**新しいPowerShellウィンドウを開いて**再試行してください。
+### ビルドエラー: "error: linker `link.exe` not found"
 
-### wingetコマンドが見つからない
+Rustのデフォルトtoolchainが`msvc`になっている可能性があります。`gnu`に変更してください：
 
-Windows 10の古いバージョンを使用している場合、wingetが利用できない可能性があります。
+```powershell
+# 現在のtoolchainを確認
+rustup show
 
-- Windows 11では標準で利用可能です
-- Windows 10では、Microsoft Storeから「アプリ インストーラー」をインストールしてください
-- または、[Visual Studio公式サイト](https://visualstudio.microsoft.com/ja/downloads/)から手動でBuild Toolsをダウンロードしてインストールできます
+# gnuに変更
+rustup default stable-x86_64-pc-windows-gnu
+
+# または、このプロジェクトのディレクトリでのみgnu toolchainを使用
+rustup override set stable-x86_64-pc-windows-gnu
+```
 
 ### オーディオデバイスが見つからない
 
