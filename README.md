@@ -4,13 +4,25 @@
 
 ## 状況
 
-開発中のため、いずれも音が鳴らない状況です。
+YM2151エミュレータライブラリは、[ym2151-emu-win-bin](https://github.com/cat2151/ym2151-emu-win-bin) リポジトリから取得できます。
 
-音が鳴るようにすべく作業を進めています。
+各言語版の実装は、このリポジトリからビルド済みバイナリをダウンロードして使用します。
 
-関連リポジトリとして、
-https://github.com/cat2151/ym2151-emu-win-bin
-での作業を進めています。
+### ライブラリの取得方法
+
+```powershell
+# すべての言語のライブラリをダウンロード
+python scripts\download_libs.py
+
+# 特定の言語のみ（python, rust, go, typescriptから選択）
+python scripts\download_libs.py python
+```
+
+または、MSYS2環境でローカルビルドすることも可能です:
+
+```powershell
+python scripts\build_libs.py
+```
 
 ## 概要
 
