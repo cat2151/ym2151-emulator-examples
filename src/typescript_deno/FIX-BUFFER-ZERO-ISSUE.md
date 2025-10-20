@@ -23,12 +23,12 @@ if (chip.soundSlotIsStreamFilled(SOUND_SLOT_INDEX)) {
 ### The Problem
 
 With the configuration:
-- Tick rate: 60 Hz
-- Sample rate: 44,100 Hz
-- Chunk size: 4,096 samples
+- Tick rate: 60 Hz (defined as `SOUND_DRIVER_TICK_RATE`)
+- Sample rate: 44,100 Hz (defined as `SAMPLING_RATE`)
+- Chunk size: 4,096 samples (defined as `SAMPLE_CHUNK_SIZE`)
 
 Each tick generates approximately **735 samples** (44,100 / 60).
-To fill a 4,096 sample chunk, we need approximately **6 ticks** (4,096 / 735 ≈ 5.57).
+To fill a 4,096 sample chunk, we need approximately **5.6 ticks** (4,096 / 735 ≈ 5.57), which means **at least 6 ticks** in practice.
 
 The old code only called `soundSlotUpdate(1)` once per iteration, then checked if the stream was filled. This meant:
 1. First iteration: Update with 1 tick → ~735 samples (not filled)
