@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 build_and_run.py
-このscriptはすべてのym2151-emulator-examplesアプリをビルドし、一つずつ実行できるようにします。
+このスクリプトはすべてのym2151-emulator-examplesアプリをビルドし、一つずつ実行できるようにします。
 用途：物理スピーカーでの人力テストを効率化します。
 Windows専用です。
 """
@@ -9,6 +9,13 @@ Windows専用です。
 import os
 import subprocess
 from pathlib import Path
+
+# Directory and path constants
+DIR_PYTHON = "src/python"
+DIR_RUST = "src/rust"
+DIR_GO = "src/go"
+DIR_TYPESCRIPT = "src/typescript_deno"
+PATH_RUST_RELEASE = "target/release"
 
 
 class Colors:
@@ -63,19 +70,24 @@ def build_python(script_dir: Path) -> None:
         log_warning("Pythonが見つかりません。Python版はスキップします。")
         return
 
-    python_dir = script_dir / "src" / "python"
+    python_dir = script_dir / DIR_PYTHON
+
+    # Check if pip exists
+    if not command_exists("pip"):
+        log_warning("pipが見つかりません。Python版の依存関係チェックをスキップします。")
+        return
 
     try:
-        # Check if required packages are installed
+        # Check if sounddevice package is installed using pip show
         result = subprocess.run(
-            ["pip", "list"],
+            ["pip", "show", "sounddevice"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
             check=False,
         )
 
-        if "sounddevice" not in result.stdout:
+        if result.returncode != 0:
             log_warning("Python版: sounddeviceがインストールされていません")
             log_info("インストール中: pip install -r requirements.txt")
             subprocess.run(
@@ -97,7 +109,7 @@ def build_rust(script_dir: Path) -> None:
         log_warning("cargoが見つかりません。Rust版はスキップします。")
         return
 
-    rust_dir = script_dir / "src" / "rust"
+    rust_dir = script_dir / DIR_RUST
     result = subprocess.run(["cargo", "build", "--release"], cwd=rust_dir, check=False)
 
     if result.returncode == 0:
@@ -114,7 +126,7 @@ def build_go(script_dir: Path) -> None:
         log_warning("goが見つかりません。Go版はスキップします。")
         return
 
-    go_dir = script_dir / "src" / "go"
+    go_dir = script_dir / DIR_GO
     
     # Set environment for Windows cross-compilation
     env = os.environ.copy()
@@ -141,7 +153,7 @@ def build_typescript(script_dir: Path) -> None:
         log_warning("npmが見つかりません。TypeScript版はスキップします。")
         return
 
-    ts_dir = script_dir / "src" / "typescript_deno"
+    ts_dir = script_dir / DIR_TYPESCRIPT
     node_modules = ts_dir / "node_modules"
 
     if not node_modules.exists():
@@ -210,12 +222,12 @@ def run_application(choice: str, script_dir: Path) -> bool:
         if choice == "1":
             log_info("Python main.py を起動します...")
             print("440HzのA4音が3秒間再生されます。")
-            subprocess.run(["python", "main.py"], cwd=script_dir / "src" / "python", check=False)
+            subprocess.run(["python", "main.py"], cwd=script_dir / DIR_PYTHON, check=False)
 
         elif choice == "2":
             log_info("Rust ym2151-example を起動します...")
             print("440HzのA4音が3秒間再生されます。")
-            exe_path = script_dir / "src" / "rust" / "target" / "release" / "ym2151-example.exe"
+            exe_path = script_dir / DIR_RUST / PATH_RUST_RELEASE / "ym2151-example.exe"
             if not exe_path.exists():
                 log_error(f"実行ファイルが見つかりません: {exe_path}")
                 log_info("Rust版をビルドしてください。")
@@ -225,7 +237,7 @@ def run_application(choice: str, script_dir: Path) -> bool:
         elif choice == "3":
             log_info("Go ym2151-example を起動します...")
             print("440HzのA4音が2秒間再生されます。")
-            exe_path = script_dir / "src" / "go" / "ym2151-example.exe"
+            exe_path = script_dir / DIR_GO / "ym2151-example.exe"
             if not exe_path.exists():
                 log_error(f"実行ファイルが見つかりません: {exe_path}")
                 log_info("Go版をビルドしてください。")
@@ -235,7 +247,7 @@ def run_application(choice: str, script_dir: Path) -> bool:
         elif choice == "4":
             log_info("TypeScript/Node.js index.js を起動します...")
             print("440HzのA4音が3秒間再生されます。")
-            ts_dir = script_dir / "src" / "typescript_deno"
+            ts_dir = script_dir / DIR_TYPESCRIPT
             dist_file = ts_dir / "dist" / "index.js"
             if not dist_file.exists():
                 log_error(f"ビルド済みファイルが見つかりません: {dist_file}")
