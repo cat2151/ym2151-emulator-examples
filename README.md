@@ -62,24 +62,32 @@ ym2151-emulator-examples/
 
 ## クイックスタート
 
-### 一括ビルド＆実行（Windows専用）
+**初めての方へ**: [QUICKSTART.md](QUICKSTART.md) で最も簡単な始め方を確認できます。
 
-すべての実装を一度にビルドし、メニューから選択して実行できます：
+### ライブラリの取得
 
-```bash
-python build_and_run.py
+```powershell
+# すべての言語のライブラリをダウンロード
+python scripts\download_libs.py
+
+# 特定の言語のみ（python, rust, go, typescriptから選択）
+python scripts\download_libs.py python
 ```
 
-詳細は **[BUILD_AND_RUN.md](BUILD_AND_RUN.md)** を参照してください。
+または、MSYS2環境でローカルビルドすることも可能です:
+
+```powershell
+python scripts\build_libs.py
+```
 
 ### 個別の実装
 
 各言語の実装については、以下のディレクトリを参照してください：
 
-- [Rust版](src/rust/README.md)
-- [Go版](src/go/README.md)
-- [TypeScript/Deno版](src/typescript_deno/README.md)
-- [Python版](src/python/README.md)
+- [Python版](src/python/README.md) - **推奨**: 最も簡単にセットアップできます
+- [Rust版](src/rust/README.md) - 高性能、MSYS2が必要
+- [TypeScript/Node.js版](src/typescript_deno/README.md) - WebAssembly版エミュレータ
+- [Go版](src/go/README.md) - 準備中
 
 ## 実装計画
 

@@ -18,40 +18,35 @@ libymfm.wasmライブラリを使用して、YM2151 (OPM) チップをエミュ�
   - PortAudio、CoreAudio、ALSAなどのバックエンドをサポート
 
 ## 必要な環境
+- **Windows 10/11専用**
 - Node.js 20.x以上
 - npm または yarn
-- システムのオーディオライブラリ（Linux: ALSA, macOS: CoreAudio, Windows: WASAPI）
 
-### Linux (Ubuntu/Debian)の場合
-```bash
-sudo apt-get install libasound2-dev
-```
-
-### macOS
-追加のインストールは不要です（CoreAudioが標準で利用可能）。
-
-### Windows
-追加のインストールは不要です（WASAPIが標準で利用可能）。
+**注意**: speakerライブラリのビルドにMSYS2が必要な場合があります。
 
 ## セットアップ
 
-### 1. システムライブラリのインストール（Linux のみ）
-```bash
-sudo apt-get install libasound2-dev
-```
+### 1. Node.jsのインストール
+
+[Node.js公式サイト](https://nodejs.org/)から最新のLTS版をダウンロードしてインストールしてください。
 
 ### 2. 依存関係のインストール
-```bash
+
+```powershell
 npm install
 ```
 
+**エラーが発生する場合**: `speaker`ライブラリのネイティブビルドに失敗する場合があります。その場合は、[ym2151-emu-win-bin](https://github.com/cat2151/ym2151-emu-win-bin) リポジトリからプリビルド版の`binding.node`を取得してください。
+
 ### 3. ビルド
-```bash
+
+```powershell
 npm run build
 ```
 
 ### 4. 実行
-```bash
+
+```powershell
 npm start
 ```
 
