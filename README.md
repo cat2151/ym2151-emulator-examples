@@ -2,6 +2,16 @@
 
 🎵 Various YM2151 emulator libraries across programming languages with minimal sound playback code samples
 
+## 状況
+
+開発中のため、いずれも音が鳴らない状況です。
+
+音が鳴るようにすべく作業を進めています。
+
+関連リポジトリとして、
+https://github.com/cat2151/ym2151-emu-win-bin
+での作業を進めています。
+
 ## 概要
 
 このリポジトリは、複数のプログラミング言語（Rust、Go、TypeScript/Deno、Python）で、YM2151エミュレータライブラリを使用した最小限の音声再生サンプルを提供します。
