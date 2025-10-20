@@ -68,8 +68,17 @@ FileNotFoundError: Nuked-OPM library not found
 
 ### ダウンロードに失敗する
 
+```
+✗ Failed to download: HTTP Error 404
+```
+
 ym2151-emu-win-binリポジトリにまだバイナリがアップロードされていない可能性があります。
-その場合は、ローカルビルド（方法B）を試してください。
+
+**確認方法**:
+1. [ym2151-emu-win-bin](https://github.com/cat2151/ym2151-emu-win-bin) リポジトリにアクセス
+2. `binaries/python/` ディレクトリに `ym2151.dll` が存在するか確認
+
+バイナリが存在しない場合は、ローカルビルド（方法B）を試してください。
 
 ### ローカルビルドに失敗する
 

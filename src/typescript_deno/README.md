@@ -36,7 +36,19 @@ libymfm.wasmライブラリを使用して、YM2151 (OPM) チップをエミュ�
 npm install
 ```
 
-**エラーが発生する場合**: `speaker`ライブラリのネイティブビルドに失敗する場合があります。その場合は、[ym2151-emu-win-bin](https://github.com/cat2151/ym2151-emu-win-bin) リポジトリからプリビルド版の`binding.node`を取得してください。
+**注意**: `speaker`ライブラリのネイティブビルドに失敗する場合があります。
+
+失敗した場合の対処法：
+
+1. エラーメッセージを確認し、MSYS2のインストールが必要か確認
+2. または、[ym2151-emu-win-bin](https://github.com/cat2151/ym2151-emu-win-bin) リポジトリをチェック：
+   - リポジトリの `binaries/typescript/` ディレクトリに `binding.node` があるか確認
+   - ある場合は、`node_modules/speaker/build/Release/` にコピー
+
+MSYS2を使ってビルドする場合：
+1. [MSYS2](https://www.msys2.org/) をインストール
+2. MSYS2 MINGW64ターミナルで `pacman -S mingw-w64-x86_64-gcc` を実行
+3. PowerShellで `npm install` を再実行
 
 ### 3. ビルド
 
