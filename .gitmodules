@@ -1,3 +1,0 @@
-[submodule "src/go/nuked-opm-src"]
-	path = src/go/nuked-opm-src
-	url = https://github.com/nukeykt/Nuked-OPM.git
