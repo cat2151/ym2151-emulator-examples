@@ -13,6 +13,8 @@ YM2151（OPM）は、1984年にヤマハが開発したFM音源チップで、�
 ```
 ym2151-emulator-examples/
 ├── IMPLEMENTATION_PLAN.md  # 詳細な実装計画書
+├── BUILD_AND_RUN.md        # ビルド＆実行スクリプト利用ガイド
+├── build_and_run.py        # 一括ビルド＆実行スクリプト（Windows専用）
 ├── src/
 │   ├── rust/              # Rust実装
 │   ├── go/                # Go実装
@@ -36,6 +38,18 @@ ym2151-emulator-examples/
 | Go | ⭐⭐⭐⭐ | 🚧 実装予定 | Nuked-OPM/ymfm + CGO |
 
 ## クイックスタート
+
+### 一括ビルド＆実行（Windows専用）
+
+すべての実装を一度にビルドし、メニューから選択して実行できます：
+
+```bash
+python build_and_run.py
+```
+
+詳細は **[BUILD_AND_RUN.md](BUILD_AND_RUN.md)** を参照してください。
+
+### 個別の実装
 
 各言語の実装については、以下のディレクトリを参照してください：
 
