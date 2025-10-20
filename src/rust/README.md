@@ -9,7 +9,7 @@ Rustを使用した、実際のYM2151エミュレータライブラリ（Nuked-O
 - ✅ 本物のYM2151エミュレータ（Nuked-OPM）を使用
 - ✅ サイクル精度の高いエミュレーション
 - ✅ RustのFFIバインディングで安全にラップ
-- ✅ Windows（WSL2）環境で動作
+- ✅ Windows環境で動作（ネイティブビルド）
 - ✅ 440Hz（A4音）のFM音源サウンドを生成
 - ✅ Nuked-OPM（C言語）を静的リンクでビルド
 
@@ -20,65 +20,60 @@ Rustを使用した、実際のYM2151エミュレータライブラリ（Nuked-O
   - ビルド時に **Nuked-OPM（C言語ライブラリ）** をコンパイルして静的リンクします
 
 ## 必要な環境
-- Windows 10/11 with WSL2（Ubuntu推奨）
+- Windows 10/11
 - Rust 1.70以降
-- GCC（Cコンパイラ - Nuked-OPM（C言語）のコンパイルに必要）
+- Visual Studio Build Tools 2022（C++コンパイラ - Nuked-OPM（C言語）のコンパイルに必要）
 
 ## セットアップと実行
 
-### 1. WSL2（Ubuntu）のインストール
+### 1. Visual Studio Build Tools 2022のインストール
 
 PowerShellを管理者権限で開き、以下を実行：
+
 ```powershell
-# WSL2とUbuntuのインストール
-wsl --install
+# wingetを使用してVisual Studio Build Tools 2022をインストール
+winget install --id Microsoft.VisualStudio.2022.BuildTools --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
 ```
 
-インストール完了後、PCを再起動してください。
+インストール完了後、新しいPowerShellウィンドウを開いてください（環境変数を反映させるため）。
 
-再起動後、スタートメニューから「Ubuntu」を起動し、初回セットアップ（ユーザー名とパスワードの設定）を完了してください。
+> **注**: Visual Studio Build Toolsは、Nuked-OPM（C言語ライブラリ）をWindowsネイティブビルドでコンパイルするために必要です。WSL2を使用する方法に比べて、ビルドプロセスがシンプルで安定性が高くなります。
 
-### 2. Ubuntu（WSL2）での環境構築
+### 2. Rustのインストール
 
-Ubuntuターミナルで以下を実行：
+新しいPowerShellで以下を実行：
 
-```bash
-# パッケージリストの更新
-sudo apt update
-
-# GCC（Cコンパイラ）とビルドツールのインストール
-# これにより Nuked-OPM（C言語ライブラリ）がビルドできます
-sudo apt install build-essential -y
-
+```powershell
 # Rustのインストール
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-
-# 環境変数の再読み込み
-source $HOME/.cargo/env
+winget install --id Rustlang.Rustup
 ```
 
-### 3. プロジェクトディレクトリへの移動
+または、[Rust公式サイト](https://www.rust-lang.org/ja/tools/install)から `rustup-init.exe` をダウンロードして実行することもできます。
 
-WSL2からWindowsのファイルシステムにアクセスします：
-```bash
-# Windowsのドライブは /mnt/ 以下にマウントされています
-# 例: C:\Users\YourName\Documents\ym2151-emulator-examples の場合
-cd /mnt/c/Users/YourName/Documents/ym2151-emulator-examples/src/rust
+インストール完了後、新しいPowerShellウィンドウを開いてください。
+
+### 3. ビルド
+
+プロジェクトディレクトリに移動してビルド：
+
+```powershell
+# プロジェクトディレクトリに移動
+cd C:\path\to\ym2151-emulator-examples\src\rust
+
+# ビルド
+cargo build --release
 ```
 
-### 4. ビルドと実行
+### 4. 実行
 
-```bash
-# ビルドと実行を一度に行う
+```powershell
+# 実行
 cargo run --release
 ```
 
-実行すると、Windowsのスピーカーから2秒間の440Hz（A4音）のFM音源サウンドが再生されます。
+実行すると、スピーカーから2秒間の440Hz（A4音）のFM音源サウンドが再生されます。
 
-※ ビルドのみ行う場合：
-```bash
-cargo build --release
-```
+> **ヒント**: `cargo run --release` でビルドと実行を一度に行うことができます。
 
 ## 実装の詳細
 
@@ -134,29 +129,30 @@ self.write(0xE0 + op, 0x0F); // RR (Release Rate)
 
 ## トラブルシューティング
 
-### WSL2がインストールできない
-Windows 10（バージョン1903以降）または Windows 11 が必要です。
+### ビルドエラー: "C compiler not found" または "link.exe not found"
+
+Visual Studio Build Toolsが正しくインストールされていない可能性があります。
+
 ```powershell
-# Windows バージョンの確認
-winver
+# Visual Studio Build Toolsの再インストール
+winget install --id Microsoft.VisualStudio.2022.BuildTools --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
 ```
 
-### ビルドエラー: "C compiler not found" または "cc: not found"
-GCC（Cコンパイラ）がインストールされているか確認してください。
-```bash
-# WSL2 Ubuntu内で実行
-sudo apt update
-sudo apt install build-essential -y
-```
+インストール後、**新しいPowerShellウィンドウを開いて**再試行してください。
+
+### wingetコマンドが見つからない
+
+Windows 10の古いバージョンを使用している場合、wingetが利用できない可能性があります。
+
+- Windows 11では標準で利用可能です
+- Windows 10では、Microsoft Storeから「アプリ インストーラー」をインストールしてください
+- または、[Visual Studio公式サイト](https://visualstudio.microsoft.com/ja/downloads/)から手動でBuild Toolsをダウンロードしてインストールできます
 
 ### オーディオデバイスが見つからない
-WSL2からWindowsのオーディオデバイスに接続できない場合があります。
-- WSLg（WSL2のGUI対応）が有効になっているか確認してください
-- Windows 11では標準で有効です
-- Windows 10では最新のWSL2に更新してください：
-  ```powershell
-  wsl --update
-  ```
+
+実際のオーディオデバイスが接続されているか確認してください。
+- スピーカーまたはヘッドフォンが接続されているか確認
+- Windowsのサウンド設定で既定のデバイスが設定されているか確認
 
 ## ライセンス
 - このプロジェクト: [MIT License](../../LICENSE)
