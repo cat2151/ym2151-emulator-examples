@@ -9,51 +9,71 @@ Rustを使用した、実際のYM2151エミュレータライブラリ（Nuked-O
 - ✅ 本物のYM2151エミュレータ（Nuked-OPM）を使用
 - ✅ サイクル精度の高いエミュレーション
 - ✅ RustのFFIバインディングで安全にラップ
-- ✅ クロスプラットフォーム対応（Windows/macOS/Linux）
+- ✅ Windows環境で動作（ネイティブビルド）
 - ✅ 440Hz（A4音）のFM音源サウンドを生成
+- ✅ Nuked-OPM（C言語）を静的リンクでビルド
 
 ## 使用ライブラリ
 - **Nuked-OPM**: サイクル精度の高いYM2151エミュレータ（C言語）
 - **cpal**: クロスプラットフォームオーディオ出力ライブラリ（Rust）
 - **cc**: Cコードコンパイル用のビルドツール（Rust）
+  - ビルド時に **Nuked-OPM（C言語ライブラリ）** をコンパイルして静的リンクします
 
-## セットアップ
+## 必要な環境
+- Windows 10/11
+- Rust 1.70以降
+- Visual Studio Build Tools 2022（C++コンパイラ - Nuked-OPM（C言語）のコンパイルに必要）
 
-### 必要な環境
+## セットアップと実行
 
-#### Linux (Ubuntu/Debian)
-```bash
-# ALSA開発ライブラリとCコンパイラのインストール
-sudo apt-get install libasound2-dev build-essential
+### 1. Visual Studio Build Tools 2022のインストール
+
+PowerShellを管理者権限で開き、以下を実行：
+
+```powershell
+# wingetを使用してVisual Studio Build Tools 2022をインストール
+winget install --id Microsoft.VisualStudio.2022.BuildTools --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
 ```
 
-#### macOS
-```bash
-# Xcodeコマンドラインツールのインストール（Cコンパイラ）
-xcode-select --install
+インストール完了後、新しいPowerShellウィンドウを開いてください（環境変数を反映させるため）。
+
+> **注**: Visual Studio Build Toolsは、Nuked-OPM（C言語ライブラリ）をWindowsネイティブビルドでコンパイルするために必要です。WSL2を使用する方法に比べて、ビルドプロセスがシンプルで安定性が高くなります。
+
+### 2. Rustのインストール
+
+新しいPowerShellで以下を実行：
+
+```powershell
+# Rustのインストール
+winget install --id Rustlang.Rustup
 ```
 
-#### Windows
-```bash
-# Visual Studio Build Tools または MinGW-w64が必要
-# https://visualstudio.microsoft.com/ja/downloads/
-```
+または、[Rust公式サイト](https://www.rust-lang.org/ja/tools/install)から `rustup-init.exe` をダウンロードして実行することもできます。
 
-### Rustのインストール
-```bash
-# Rustがまだインストールされていない場合
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-```
+インストール完了後、新しいPowerShellウィンドウを開いてください。
 
-## ビルドと実行
+### 3. ビルド
 
-```bash
-# プロジェクトのビルド
+プロジェクトディレクトリに移動してビルド：
+
+```powershell
+# プロジェクトディレクトリに移動
+cd C:\path\to\ym2151-emulator-examples\src\rust
+
+# ビルド
 cargo build --release
+```
 
+### 4. 実行
+
+```powershell
 # 実行
 cargo run --release
 ```
+
+実行すると、スピーカーから2秒間の440Hz（A4音）のFM音源サウンドが再生されます。
+
+> **ヒント**: `cargo run --release` でビルドと実行を一度に行うことができます。
 
 ## 実装の詳細
 
@@ -109,21 +129,30 @@ self.write(0xE0 + op, 0x0F); // RR (Release Rate)
 
 ## トラブルシューティング
 
-### Linux: "libasound2-dev not found"
-```bash
-sudo apt-get update
-sudo apt-get install libasound2-dev
+### ビルドエラー: "C compiler not found" または "link.exe not found"
+
+Visual Studio Build Toolsが正しくインストールされていない可能性があります。
+
+```powershell
+# Visual Studio Build Toolsの再インストール
+winget install --id Microsoft.VisualStudio.2022.BuildTools --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
 ```
 
-### ビルドエラー: "C compiler not found"
-Cコンパイラがインストールされているか確認してください。
-- Linux: `sudo apt-get install build-essential`
-- macOS: `xcode-select --install`
-- Windows: Visual Studio Build Toolsをインストール
+インストール後、**新しいPowerShellウィンドウを開いて**再試行してください。
+
+### wingetコマンドが見つからない
+
+Windows 10の古いバージョンを使用している場合、wingetが利用できない可能性があります。
+
+- Windows 11では標準で利用可能です
+- Windows 10では、Microsoft Storeから「アプリ インストーラー」をインストールしてください
+- または、[Visual Studio公式サイト](https://visualstudio.microsoft.com/ja/downloads/)から手動でBuild Toolsをダウンロードしてインストールできます
 
 ### オーディオデバイスが見つからない
+
 実際のオーディオデバイスが接続されているか確認してください。
-CI/CD環境など、オーディオデバイスがない環境では実行できません。
+- スピーカーまたはヘッドフォンが接続されているか確認
+- Windowsのサウンド設定で既定のデバイスが設定されているか確認
 
 ## ライセンス
 - このプロジェクト: [MIT License](../../LICENSE)
