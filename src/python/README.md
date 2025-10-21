@@ -38,8 +38,6 @@ pip install -r requirements.txt
 
 ### 2. YM2151エミュレータDLLの取得
 
-**方法1: ダウンロード（推奨）**
-
 プロジェクトルートから以下を実行：
 
 ```powershell
@@ -51,25 +49,6 @@ python scripts\download_libs.py python
 ```
 
 ライブラリは [ym2151-emu-win-bin](https://github.com/cat2151/ym2151-emu-win-bin) リポジトリから取得されます。
-
-**方法2: ローカルビルド（代替手段）**
-
-MSYS2環境が必要です：
-
-```powershell
-# MSYS2 MINGW64環境をインストール後、以下を実行
-python scripts\build_libs.py
-```
-
-#### MSYS2のセットアップ（ローカルビルドする場合のみ）
-
-1. [MSYS2](https://www.msys2.org/) をインストール
-2. MSYS2 MINGW64ターミナルを開き、GCCをインストール:
-   ```bash
-   pacman -S mingw-w64-x86_64-gcc
-   ```
-
-**重要**: ビルドされるDLLは静的リンクされており、MinGW DLLに依存しません。
 
 ## 実行方法
 
@@ -114,14 +93,11 @@ OSError: PortAudio library not found
 FileNotFoundError: Nuked-OPM library not found
 ```
 
-→ `ym2151.dll`が`src/python/`ディレクトリにあることを確認してください。以下のいずれかを実行してください：
+→ `ym2151.dll`が`src/python/`ディレクトリにあることを確認してください。以下を実行してください：
 
 ```powershell
 # ダウンロード
 python scripts\download_libs.py python
-
-# またはローカルビルド
-python scripts\build_libs.py
 ```
 
 ### オーディオデバイスがない

@@ -55,27 +55,6 @@ python scripts\download_libs.py typescript # TypeScript版のみ
 - **Windows専用**: すべてのライブラリはWindows環境向けにビルドされています
 - **MSYS2不要**: ライブラリをダウンロードして使用する限り、MSYS2のインストールは不要です
 
-## ローカルビルド（オプション）
-
-ライブラリをローカルでビルドしたい場合は、MSYS2環境が必要です。
-
-### MSYS2のセットアップ
-
-1. [MSYS2](https://www.msys2.org/) をダウンロードしてインストール
-2. MSYS2 MINGW64ターミナルを開く
-3. GCCをインストール：
-   ```bash
-   pacman -S mingw-w64-x86_64-gcc
-   ```
-
-### ビルド実行
-
-```powershell
-python scripts\build_libs.py
-```
-
-**注意**: ビルドスクリプトは、MSYS2がデフォルトの場所（`C:\msys64`）にインストールされていることを前提としています。
-
 ## トラブルシューティング
 
 ### ライブラリのダウンロードに失敗する
@@ -84,23 +63,9 @@ python scripts\build_libs.py
 ✗ Failed to download: HTTP Error 404
 ```
 
-→ ym2151-emu-win-binリポジトリにまだバイナリがコミットされていない可能性があります。その場合は、ローカルビルドを試してください：
+→ ym2151-emu-win-binリポジトリにまだバイナリがコミットされていない可能性があります。リポジトリの状況を確認してください：
 
-```powershell
-python scripts\build_libs.py
-```
-
-### MSYS2が見つからない（ローカルビルド時）
-
-```
-✗ MSYS2 が見つかりません
-```
-
-→ [MSYS2](https://www.msys2.org/) をインストールし、MINGW64環境でGCCをインストールしてください：
-
-```bash
-pacman -S mingw-w64-x86_64-gcc
-```
+https://github.com/cat2151/ym2151-emu-win-bin
 
 ### Pythonが見つからない
 

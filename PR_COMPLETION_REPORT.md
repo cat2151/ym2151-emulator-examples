@@ -11,8 +11,7 @@
 **解決策**: 
 1. ライブラリビルドの責任を[ym2151-emu-win-bin](https://github.com/cat2151/ym2151-emu-win-bin)リポジトリに分離
 2. 簡単なダウンロードスクリプトを提供（`download_libs.py`）
-3. ローカルビルドオプションも提供（`build_libs.py`、MSYS2使用）
-4. 初心者向けのQUICKSTARTガイドを作成
+3. 初心者向けのQUICKSTARTガイドを作成
 
 ### 作成したファイル
 
@@ -25,11 +24,6 @@
 2. **`download_libs.ps1`** - PowerShell版ダウンロードスクリプト
    - download_libs.pyと同等の機能
    - Pythonがない環境でも使用可能
-
-3. **`build_libs.py`** - ローカルビルドスクリプト
-   - MSYS2環境でNuked-OPMをビルド
-   - MinGW DLL非依存（静的リンク）
-   - ym2151-emu-win-binからバイナリが取得できない場合の代替手段
 
 #### ドキュメント
 1. **`QUICKSTART.md`** - 最速セットアップガイド
@@ -108,12 +102,7 @@
 
 ### 最速で音を鳴らす方法
 
-1. **ライブラリをダウンロード**
-   ```powershell
-   python scripts\download_libs.py python
-   ```
-
-2. **Python環境をセットアップ**
+1. **Python環境をセットアップ**
    ```powershell
    cd src\python
    python -m venv venv
@@ -121,7 +110,15 @@
    pip install -r requirements.txt
    ```
 
+2. **ライブラリをダウンロード**
+   ```powershell
+   cd ..\..
+   python scripts\download_libs.py python
+   ```
+
 3. **実行**
+   ```powershell
+   cd src\python
    ```powershell
    python main.py
    ```
@@ -140,10 +137,7 @@
 2. `binaries/python/ym2151.dll` が存在するか確認
 
 **バイナリがない場合**:
-```powershell
-python scripts\build_libs.py
-```
-でローカルビルドできます（MSYS2が必要）。
+ym2151-emu-win-binリポジトリにて対応をお待ちください。
 
 ### 破壊的変更
 
@@ -176,7 +170,6 @@ python scripts\build_libs.py
 ✅ **ユーザーエクスペリエンスが大幅に改善**
 - QUICKSTARTガイドで迷わず始められる
 - ライブラリダウンロードが簡単（Python版）
-- MSYS2でのローカルビルドも可能
 
 ✅ **責任の分離が明確化**
 - ビルド: ym2151-emu-win-bin
