@@ -23,23 +23,12 @@ pip install -r requirements.txt
 
 ### ステップ2: YM2151エミュレータDLLの取得
 
-**方法A: ym2151-emu-win-binからダウンロード（推奨）**
-
 ```powershell
 # プロジェクトルートに戻る
 cd ..\..
 
 # Python版ライブラリをダウンロード
 python scripts\download_libs.py python
-```
-
-**方法B: ローカルビルド（MSYS2が必要）**
-
-MSYS2をインストール済みの場合：
-
-```powershell
-# プロジェクトルートで実行
-python scripts\build_libs.py
 ```
 
 ### ステップ3: 実行
@@ -77,19 +66,6 @@ ym2151-emu-win-binリポジトリにまだバイナリがアップロードさ�
 **確認方法**:
 1. [ym2151-emu-win-bin](https://github.com/cat2151/ym2151-emu-win-bin) リポジトリにアクセス
 2. `binaries/python/` ディレクトリに `ym2151.dll` が存在するか確認
-
-バイナリが存在しない場合は、ローカルビルド（方法B）を試してください。
-
-### ローカルビルドに失敗する
-
-MSYS2のインストールと設定を確認してください：
-
-1. [MSYS2](https://www.msys2.org/) をインストール
-2. MSYS2 MINGW64ターミナルを開く
-3. 以下を実行:
-   ```bash
-   pacman -S mingw-w64-x86_64-gcc
-   ```
 
 ## 次のステップ
 

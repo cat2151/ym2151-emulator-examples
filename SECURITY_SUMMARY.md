@@ -15,7 +15,6 @@
 The CodeQL security scanner analyzed all Python code in this repository, including:
 
 - `scripts/download_libs.py` - Library download script
-- `scripts/build_libs.py` - Local build script  
 - `src/python/nuked_opm.py` - Nuked-OPM wrapper
 - `src/python/main.py` - Main implementation
 - `src/python/simple_demo.py` - Demo program
@@ -36,27 +35,9 @@ The CodeQL security scanner analyzed all Python code in this repository, includi
 
 **Mitigation**:
 - Repository is controlled by the same organization
-- Users can alternatively build locally from source
 - No automatic execution of downloaded binaries
 
-#### 2. Local Build (`build_libs.py`)
-
-**Security Measures**:
-- Downloads source from official Nuked-OPM repository
-- Builds from source using user's local compiler (MSYS2/GCC)
-- Static linking prevents DLL injection attacks
-- No external runtime dependencies (MinGW DLLs)
-
-**Potential Risks**:
-- Requires user to have MSYS2 installed
-- Depends on Nuked-OPM repository integrity
-
-**Mitigation**:
-- Source code is from well-known, established project
-- User controls build environment
-- Static linking ensures no runtime DLL dependencies
-
-#### 3. Library Loading (`nuked_opm.py`)
+#### 2. Library Loading (`nuked_opm.py`)
 
 **Security Measures**:
 - Explicit library path checking
@@ -78,9 +59,8 @@ The CodeQL security scanner analyzed all Python code in this repository, includi
 ### For Users
 
 1. **Verify Source**: Ensure you're cloning from the official repository
-2. **Check Downloads**: If downloading binaries, verify they're from the official ym2151-emu-win-bin repository
-3. **Prefer Local Build**: For maximum security, use `build_libs.py` to build from source
-4. **Keep Updated**: Regularly update to get security fixes
+2. **Check Downloads**: Verify downloads are from the official ym2151-emu-win-bin repository
+3. **Keep Updated**: Regularly update to get security fixes
 
 ### For Developers
 
@@ -120,6 +100,5 @@ The implementation follows security best practices:
 - No user input used in security-critical operations
 - Static linking to prevent DLL attacks
 - Clear separation between download and execution
-- Option to build from source
 
 **Recommendation**: Approved for merge, pending functional testing.

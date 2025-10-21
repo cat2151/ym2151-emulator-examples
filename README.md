@@ -18,12 +18,6 @@ python scripts\download_libs.py
 python scripts\download_libs.py python
 ```
 
-または、MSYS2環境でローカルビルドすることも可能です:
-
-```powershell
-python scripts\build_libs.py
-```
-
 ## 概要
 
 このリポジトリは、複数のプログラミング言語（Rust、Go、TypeScript/Deno、Python）で、YM2151エミュレータライブラリを使用した最小限の音声再生サンプルを提供します。
@@ -84,12 +78,6 @@ python scripts\download_libs.py
 
 # 特定の言語のみ（python, rust, go, typescriptから選択）
 python scripts\download_libs.py python
-```
-
-または、MSYS2環境でローカルビルドすることも可能です:
-
-```powershell
-python scripts\build_libs.py
 ```
 
 ### 個別の実装
