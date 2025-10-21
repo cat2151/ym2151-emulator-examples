@@ -34,15 +34,15 @@ TypeScript/Node.js版に以下の機能が追加されました：
 - ✅ **ランダムパラメータ版**: CTRL+Cまで無限ループでランダムパラメータを試行
 - ✅ **Windows専用ドキュメント**: MSYS2を使用した詳細なセットアップ手順
 
-詳細は [src/typescript_deno/ISSUE-16-IMPLEMENTATION-REPORT.md](src/typescript_deno/ISSUE-16-IMPLEMENTATION-REPORT.md) を参照してください。
+詳細は [issue-notes/16_IMPLEMENTATION_REPORT.md](issue-notes/16_IMPLEMENTATION_REPORT.md) を参照してください。
 
 ## プロジェクト構成
 
 ```
 ym2151-emulator-examples/
 ├── IMPLEMENTATION_PLAN.md  # 詳細な実装計画書
-├── BUILD_AND_RUN.md        # ビルド＆実行スクリプト利用ガイド
 ├── build_and_run.py        # 一括ビルド＆実行スクリプト（Windows専用）
+├── issue-notes/            # Issue関連ドキュメント
 ├── src/
 │   ├── rust/              # Rust実装
 │   ├── go/                # Go実装
@@ -68,7 +68,7 @@ ym2151-emulator-examples/
 
 ## クイックスタート
 
-**初めての方へ**: [QUICKSTART.md](QUICKSTART.md) で最も簡単な始め方を確認できます。
+**初めての方へ**: [issue-notes/22_QUICKSTART.md](issue-notes/22_QUICKSTART.md) で最も簡単な始め方を確認できます。
 
 ### ライブラリの取得
 
