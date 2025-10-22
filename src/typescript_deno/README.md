@@ -2,9 +2,9 @@
 
 > **注意**: このディレクトリ名は`typescript_deno`ですが、実装は**Node.js**です。
 > Denoでの直接オーディオ再生は技術的に実現不可能なため、Node.jsを使用しています。
-> 詳細は [DENO_INVESTIGATION.md](./DENO_INVESTIGATION.md) を参照してください。
+> 詳細は [../../issue-notes/04_DENO_INVESTIGATION.md](../../issue-notes/04_DENO_INVESTIGATION.md) を参照してください。
 
-> **重要**: この実装は**Windows専用**です。詳細なセットアップ手順は [README-WINDOWS.md](./README-WINDOWS.md) を参照してください。
+> **重要**: この実装は**Windows専用**です。詳細なセットアップ手順は [../../issue-notes/16_README_WINDOWS.md](../../issue-notes/16_README_WINDOWS.md) を参照してください。
 
 ## 概要
 TypeScriptとNode.jsを使用したYM2151エミュレータの最小実装例です。
@@ -41,7 +41,7 @@ libymfm.wasmライブラリを使用して、YM2151 (OPM) チップをエミュ�
 
 ## セットアップ
 
-**詳細なWindows専用セットアップ手順は [README-WINDOWS.md](./README-WINDOWS.md) を参照してください。**
+**詳細なWindows専用セットアップ手順は [../../issue-notes/16_README_WINDOWS.md](../../issue-notes/16_README_WINDOWS.md) を参照してください。**
 
 **重要**: 
 - `speaker`ライブラリはネイティブモジュール（C++）で、`npm install`時に自動的にコンパイルされます
@@ -145,8 +145,7 @@ typescript_deno/
 ├── dist/                     # ビルド出力（npm run buildで生成）
 ├── package.json
 ├── tsconfig.json
-├── README.md                 # このファイル
-└── README-WINDOWS.md         # Windows専用セットアップ詳細
+└── README.md                 # このファイル
 ```
 
 ## YM2151レジスタ設定
