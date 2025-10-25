@@ -1,7 +1,9 @@
 # Issue #30: Agent Guidelines Update for Windows-Only Focus
 
-## 概要
+## 概要 / Overview
 このissueでは、`.github/copilot-instructions.md`を更新し、AIエージェント向けのガイドラインを改善しました。主な目的は以下の通りです：
+
+This issue updates `.github/copilot-instructions.md` to improve guidelines for AI agents. The main objectives are:
 
 1. **Windows専用であることの明確化**
 2. **macOS/Linuxの記述を削除してハルシネーション対策**
@@ -86,7 +88,7 @@ gcc -c nuked_opm.c -o nuked_opm.o
 ar rcs libym2151.a nuked_opm.o
 
 # または静的リンクフラグ付きでビルド
-gcc -static -o output.exe source.c -lym2151
+gcc -static -o output.exe source.c -L. -lym2151
 ```
 
 **検証方法:**
@@ -140,16 +142,19 @@ cat .github/copilot-instructions.md
 - 既存のドキュメントも変更なし
 - 新規のガイドラインのみ追加
 
-## 今後の推奨アクション
+## 実装状況
 
-### 優先度：高
-- [x] `.github/copilot-instructions.md`の更新
+### 完了したタスク
+- [x] `.github/copilot-instructions.md`の更新 (このPRで実装)
+- [x] `issue-notes/30_AGENT_GUIDELINES_UPDATE.md`の作成 (このPRで実装)
 
-### 優先度：中
+### 今後の推奨アクション
+
+**優先度：中**
 - [ ] 既存READMEからmacOS/Linuxの記述を段階的に削除（別issue）
 - [ ] 新しいスクリプト作成時はPythonを使用
 
-### 優先度：低
+**優先度：低**
 - [ ] 既存のドキュメントを`issue-notes/XX_TITLE.md`形式に移行検討
 
 ## まとめ
