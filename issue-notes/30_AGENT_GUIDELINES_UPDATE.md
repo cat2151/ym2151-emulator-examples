@@ -9,6 +9,8 @@ This issue updates `.github/copilot-instructions.md` to improve guidelines for A
 2. **macOS/Linuxの記述を削除してハルシネーション対策**
 3. **Python scriptの使用を推奨**
 4. **issue-notes/XX_TITLE.md形式でのドキュメント配置を明記**
+5. **Zig ccの使用（MinGWからの移行）**
+6. **node-naudiodonの使用（node-speakerからの移行）**
 
 ## 実施した変更
 
@@ -30,21 +32,21 @@ This issue updates `.github/copilot-instructions.md` to improve guidelines for A
 ```markdown
 ## スクリプト作成方針
 - 新しい自動化スクリプトはPythonで書く
-- BAT/Shell/PowerShellは避ける
-- 既存のPowerShellスクリプトは維持
+- BAT/Shell/PowerShellは使用しない（legacyな言語）
+- 既存のBAT/PowerShell/Shellスクリプトは積極的にPythonスクリプトに置き換える
 ```
 
 **理由:**
 - Pythonは以下の点で優れている:
   - エラーハンドリングが明確
   - 保守性が高い
-  - クロスプラットフォーム互換性（将来の拡張性）
+  - GitHubでのメンテナンスに適している
   - 既に使用されている（build_and_run.py, download_libs.py）
 
 **既存のスクリプト:**
 - `build_and_run.py` - ビルド＆実行の自動化
 - `scripts/download_libs.py` - ライブラリダウンロード
-- `scripts/download_libs.ps1` - PowerShell版（維持）
+- `scripts/download_libs.ps1` - PowerShell版（置き換え対象）
 
 ### 3. ドキュメント配置方針の追加
 
@@ -66,53 +68,68 @@ This issue updates `.github/copilot-instructions.md` to improve guidelines for A
 - ドキュメントの整理が容易
 - 一貫性のあるファイル命名規則
 
-### 4. MSYS2ビルド詳細ガイドの追加
+### 4. Zig ccビルドガイドの追加（MSYS2/MinGWからの移行）
 
 **新規追加セクション:**
 ```markdown
-## MSYS2ビルド詳細ガイド
-- 静的リンク（推奨）
-- 避けるべきパターン
-- 検証方法
+## Zig ccビルドガイド
+- CGOを使用するGoプロジェクトでは、Zig ccをCコンパイラとして使用
+- MinGWは使用しない
 ```
 
 **重要な内容:**
-- MinGW-w64のDLLに依存しない静的リンクを推奨
-- 動的リンクで必要になるDLL（libgcc_s_seh-1.dll等）への依存を避ける
+- Zig ccの利点:
+  - MinGWの複雑な依存関係を回避
+  - クロスコンパイルが容易
+  - DLL依存の問題が少ない
 - 標準的なWindows環境でそのまま動作すべき
 
 **具体的なビルドコマンド例:**
 ```bash
-# 静的リンクでビルド（MinGW-w64 DLL不要）
-gcc -c nuked_opm.c -o nuked_opm.o
-ar rcs libym2151.a nuked_opm.o
+# 環境変数を設定
+set CC=zig cc
+set CXX=zig c++
+set CGO_ENABLED=1
 
-# または静的リンクフラグ付きでビルド
-gcc -static -o output.exe source.c -L. -lym2151
+# Goプロジェクトをビルド
+go build -o ym2151-example.exe main.go
 ```
+
+**Zigのインストール:**
+- https://ziglang.org/download/ からダウンロード
+- システムのPATH環境変数に追加
 
 **検証方法:**
 ```bash
-# 依存DLLを確認（PowerShellまたはコマンドプロンプト）
-dumpbin /dependents output.exe
+# Zigのバージョン確認
+zig version
 
-# MSYS2内で確認
-ldd output.exe
+# ビルド後、依存DLLを確認
+dumpbin /dependents ym2151-example.exe
+```
 ```
 
-### 5. その他の更新
+### 5. TypeScript/Node.js版のオーディオライブラリ変更
+
+**変更内容:**
+- node-speakerからnode-naudiodonへ移行
+- TypeScript/Node.js版: `Node.js + libymfm.wasm + naudiodon`
+
+**理由:**
+- node-naudiodonは最新のNode.jsバージョンに対応
+- より安定した動作
+- Windows環境での互換性が高い
+
+## その他の更新
 
 **ビルド・実行ワークフローの更新:**
-- Windows専用であることを明記
-- Goのビルドコマンドを`.exe`付きに修正
-- `set CGO_ENABLED=1`の使用を明記（Windows環境）
+- Goのビルドコマンドを`Zig cc`使用に更新
+  - `set CC=zig cc` → `set CXX=zig c++` → `set CGO_ENABLED=1`
+- MinGWに関する記述を削除
+- Zig ccの使用を明記
 
-**リアルタイム再生の明記:**
-- WAVファイル出力ではなく、speaker等を使ったリアルタイム再生であることを強調
-
-**"userによる追加情報"セクションの削除:**
-- 本文に統合したため削除
-- 内容は適切なセクションに再配置
+**サウンド出力ライブラリの更新:**
+- speakerからnaudiodonへの変更を明記
 
 ## 影響範囲
 
@@ -159,11 +176,12 @@ cat .github/copilot-instructions.md
 
 ## まとめ
 
-このissueでは、AIエージェント向けのガイドラインを大幅に改善しました：
+このissueでは、AIエージェント向けのガイドラインを大幅に改善し、cat-oscillator-syncリポジトリの最新状況に準拠しました：
 
 1. ✅ **Windows専用の明確化** - ハルシネーション防止
-2. ✅ **スクリプト方針** - Python優先
+2. ✅ **スクリプト方針** - Python優先、BAT/PowerShell/Shellは積極的に置き換え
 3. ✅ **ドキュメント配置** - issue-notes/XX_TITLE.md形式
-4. ✅ **MSYS2ビルドガイド** - 静的リンク推奨
+4. ✅ **Zig ccビルドガイド** - MinGW/MSYS2からの移行
+5. ✅ **node-naudiodon使用** - node-speakerからの移行
 
 これらの変更により、AIエージェントがより正確で一貫性のある提案を行えるようになり、プロジェクトの品質向上に貢献します。

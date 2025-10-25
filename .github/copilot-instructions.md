@@ -8,8 +8,8 @@
 
 ## ディレクトリ構成と主要ファイル
 - `src/rust/` : Rust + Nuked-OPM + cpal。`main.rs`がエントリポイント。`build.rs`でCコードをビルド。
-- `src/go/` : Go + Nuked-OPM + PortAudio。`main.go`がエントリポイント。CGO必須。
-- `src/typescript_deno/` : Node.js + libymfm.wasm + speaker。`src/index.ts`がメイン。Denoは調査用。
+- `src/go/` : Go + Nuked-OPM + PortAudio。`main.go`がエントリポイント。CGO必須（Zig ccを使用）。
+- `src/typescript_deno/` : Node.js + libymfm.wasm + naudiodon。`src/index.ts`がメイン。Denoは調査用。
 - `src/python/` : Python + Nuked-OPM + sounddevice。`main.py`がメイン。ctypesでCライブラリをラップ。
 
 ## プラットフォーム方針（重要）
@@ -20,29 +20,32 @@
 
 ## ビルド・実行ワークフロー（Windows専用）
 - Rust: `cargo build --release` → `cargo run --release`
-- Go: `set CGO_ENABLED=1` → `go build -o ym2151-example.exe main.go` → `ym2151-example.exe`
+- Go: `set CC=zig cc` → `set CXX=zig c++` → `set CGO_ENABLED=1` → `go build -o ym2151-example.exe main.go` → `ym2151-example.exe`
 - Python: `pip install -r requirements.txt` → `python main.py`
 - TypeScript(Node.js): `npm install` → `npm run build` → `npm start`
-- 必要なシステムライブラリ: MSYS2経由でインストール（PortAudio等）
+- Cコンパイラ: Zig ccを使用（MinGWは使用しない）
 
 ## 重要な開発パターン・注意点
 - 各言語とも「YM2151レジスタ初期化→音色/周波数設定→PCM出力」の流れが共通。
 - C/C++エミュレータ（Nuked-OPM等）はFFI/CGO/ctypesでラップし、WASMはTypeScriptから直接呼び出し。
-- サウンド出力は各言語のライブラリ（cpal, PortAudio, sounddevice, speaker）を利用。
+- サウンド出力は各言語のライブラリ（cpal, PortAudio, sounddevice, naudiodon）を利用。
 - サンプルは「A4=440Hzの単音」を3秒程度再生する最小構成。
-- **リアルタイム再生**: speaker等を使ったリアルタイム再生を実装。WAVファイル出力ではない。
+- **リアルタイム再生**: naudiodon等を使ったリアルタイム再生を実装。WAVファイル出力ではない。
 - WASMバイナリやCライブラリはWindows用にビルドが必要。READMEの手順を参照。
 - Denoでは直接オーディオ出力不可。Node.jsでのみ動作。
+- **TypeScript/Node.js版**: node-speakerではなくnode-naudiodonを使用
 
 ## スクリプト作成方針
 - **新しい自動化スクリプトはPythonで書いてください。**
-- BAT（バッチファイル）、Shell Script（.sh）、PowerShell（.ps1）は避けてください。
+- BAT（バッチファイル）、Shell Script（.sh）、PowerShell（.ps1）は使用しません。
+  - これらはlegacyな言語であり、GitHubでのメンテナンスに向かないためです。
+  - **既存のBAT/PowerShell/Shellスクリプトは積極的にPythonスクリプトに置き換えてください。**
 - 理由: Pythonは以下の点で優れています:
-  - クロスプラットフォーム互換性が高い（将来の拡張性）
   - エラーハンドリングが明確
   - 保守性が高い
+  - GitHubでのメンテナンスに適している
   - このプロジェクトで既に使用されている（build_and_run.py, download_libs.py等）
-- 既存のPowerShellスクリプト（download_libs.ps1）は維持しますが、新規作成は避けてください。
+- 環境構築は、複数の手順が必要な場合に、Pythonスクリプトファイルを作成して自動化してください。
 
 ## 参考: 主要なカスタマイズ例
 - 音の高さ: 各mainファイル内のKC（Key Code）値を変更
@@ -52,10 +55,12 @@
 ## 典型的なトラブルと対処（Windows専用）
 - C/C++/WASMバイナリが見つからない→ビルド手順・パスを再確認
 - サウンドデバイスが見つからない→Windowsのオーディオ設定・依存ライブラリを確認
-- CGO/ctypes利用時はMSYS2のCビルド環境が必要
-- **重要**: MSYS2でビルドする際は、MinGW-w64のDLLに依存しないように静的リンクすること
-  - `-static`フラグや静的ライブラリ（.a）を使用
-  - ランタイムにMinGW-w64のDLLが必要な状態は避ける
+- CGO利用時はZig ccを使用
+  - `set CC=zig cc`
+  - `set CXX=zig c++`
+  - `set CGO_ENABLED=1`
+- **重要**: Zig ccでビルドすることで、依存DLLの問題を回避
+  - MinGWは使用しません
   - 成果物は標準的なWindows環境でそのまま動作すべき
 
 ## ドキュメント配置方針
@@ -72,30 +77,36 @@
 - 詳細な設計・比較は `IMPLEMENTATION_PLAN.md` `LIBRARY_COMPARISON.md` を参照
 - 各言語ごとのREADMEにセットアップ・実行・カスタマイズ例あり（Windows専用）
 
-## MSYS2ビルド詳細ガイド
-- MSYS2を使用してCライブラリをビルドする際の重要な注意事項:
+## Zig ccビルドガイド
+- CGOを使用するGoプロジェクトでは、Zig ccをCコンパイラとして使用します。
   
-### 静的リンク（推奨）
-```bash
-# 静的リンクでビルド（MinGW-w64 DLL不要）
-gcc -c nuked_opm.c -o nuked_opm.o
-ar rcs libym2151.a nuked_opm.o
+### Zig ccの利点
+- MinGWの複雑な依存関係を回避
+- クロスコンパイルが容易
+- DLL依存の問題が少ない
 
-# または静的リンクフラグ付きでビルド
-gcc -static -o output.exe source.c -lym2151
+### ビルド手順
+```bash
+# 環境変数を設定
+set CC=zig cc
+set CXX=zig c++
+set CGO_ENABLED=1
+
+# Goプロジェクトをビルド
+go build -o ym2151-example.exe main.go
 ```
 
-### 避けるべきパターン
-- 動的リンク（.dll）のみの配布: `libgcc_s_seh-1.dll`, `libwinpthread-1.dll`等のMinGW-w64 DLLが必要になる
-- これらのDLLに依存すると、エンドユーザーのPC環境で動作しない可能性がある
+### Zigのインストール
+- https://ziglang.org/download/ からZigをダウンロード
+- ZigのパスをシステムのPATH環境変数に追加
 
 ### 検証方法
 ```bash
-# 依存DLLを確認（PowerShellまたはコマンドプロンプト）
-dumpbin /dependents output.exe
+# Zigのバージョン確認
+zig version
 
-# MSYS2内で確認
-ldd output.exe
+# ビルド後、依存DLLを確認
+dumpbin /dependents ym2151-example.exe
 ```
 
 標準的なWindows DLL（kernel32.dll, msvcrt.dll等）のみに依存している状態が理想。
